@@ -796,8 +796,9 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
         ),
         'Html2Text\\' => 
         array (
-            0 => __DIR__ . '/..' . '/html2text/html2text/src',
-            1 => __DIR__ . '/..' . '/html2text/html2text/test',
+            0 => __DIR__ . '/../..' . '/overrides/html2text/html2text/src',
+            1 => __DIR__ . '/..' . '/html2text/html2text/src',
+            2 => __DIR__ . '/..' . '/html2text/html2text/test',
         ),
         'GuzzleHttp\\Psr7\\' => 
         array (
@@ -1076,6 +1077,7 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
         'App\\Http\\Controllers\\TranslateController' => __DIR__ . '/../..' . '/app/Http/Controllers/TranslateController.php',
         'App\\Http\\Controllers\\UsersController' => __DIR__ . '/../..' . '/app/Http/Controllers/UsersController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
+        'App\\Http\\Middleware\\CheckBrowser' => __DIR__ . '/../..' . '/app/Http/Middleware/CheckBrowser.php',
         'App\\Http\\Middleware\\CheckRole' => __DIR__ . '/../..' . '/app/Http/Middleware/CheckRole.php',
         'App\\Http\\Middleware\\CustomHandle' => __DIR__ . '/../..' . '/app/Http/Middleware/CustomHandle.php',
         'App\\Http\\Middleware\\EncryptCookies' => __DIR__ . '/../..' . '/app/Http/Middleware/EncryptCookies.php',
@@ -1088,6 +1090,7 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
         'App\\Http\\Middleware\\TerminateHandler' => __DIR__ . '/../..' . '/app/Http/Middleware/TerminateHandler.php',
         'App\\Http\\Middleware\\TokenAuth' => __DIR__ . '/../..' . '/app/Http/Middleware/TokenAuth.php',
         'App\\Http\\Middleware\\TrimStrings' => __DIR__ . '/../..' . '/app/Http/Middleware/TrimStrings.php',
+        'App\\Http\\Middleware\\TrustHosts' => __DIR__ . '/../..' . '/app/Http/Middleware/TrustHosts.php',
         'App\\Http\\Middleware\\TrustProxies' => __DIR__ . '/../..' . '/app/Http/Middleware/TrustProxies.php',
         'App\\Http\\Middleware\\VerifyCsrfToken' => __DIR__ . '/../..' . '/app/Http/Middleware/VerifyCsrfToken.php',
         'App\\Job' => __DIR__ . '/../..' . '/app/Job.php',
@@ -1166,6 +1169,7 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
         'Axn\\Laroute\\Routes\\Collection' => __DIR__ . '/../..' . '/overrides/axn/laravel-laroute/src/Routes/Collection.php',
         'Axn\\Laroute\\ServiceProvider' => __DIR__ . '/..' . '/axn/laravel-laroute/src/ServiceProvider.php',
         'Barryvdh\\Debugbar\\DataCollector\\QueryCollector' => __DIR__ . '/../..' . '/overrides/barryvdh/laravel-debugbar/src/DataCollector/QueryCollector.php',
+        'Barryvdh\\Debugbar\\DataCollector\\ViewCollector' => __DIR__ . '/../..' . '/overrides/barryvdh/laravel-debugbar/src/DataCollector/ViewCollector.php',
         'Barryvdh\\Debugbar\\DataFormatter\\QueryFormatter' => __DIR__ . '/../..' . '/overrides/barryvdh/laravel-debugbar/src/DataFormatter/QueryFormatter.php',
         'Barryvdh\\Debugbar\\JavascriptRenderer' => __DIR__ . '/../..' . '/overrides/barryvdh/laravel-debugbar/src/JavascriptRenderer.php',
         'Barryvdh\\TranslationManager\\Console\\CleanCommand' => __DIR__ . '/..' . '/barryvdh/laravel-translation-manager/src/Console/CleanCommand.php',
@@ -2020,7 +2024,7 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
         'HTMLPurifier_VarParser_Flexible' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/VarParser/Flexible.php',
         'HTMLPurifier_VarParser_Native' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/VarParser/Native.php',
         'HTMLPurifier_Zipper' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier/Zipper.php',
-        'Html2Text\\Html2Text' => __DIR__ . '/..' . '/html2text/html2text/src/Html2Text.php',
+        'Html2Text\\Html2Text' => __DIR__ . '/../..' . '/overrides/html2text/html2text/src/Html2Text.php',
         'Illuminate\\Auth\\Access\\AuthorizationException' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Auth/Access/AuthorizationException.php',
         'Illuminate\\Auth\\Access\\Gate' => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Auth/Access/Gate.php',
         'Illuminate\\Auth\\Access\\HandlesAuthorization' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Auth/Access/HandlesAuthorization.php',

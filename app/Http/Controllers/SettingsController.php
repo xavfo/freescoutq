@@ -94,6 +94,7 @@ class SettingsController extends Controller
                         ],
                     ],
                     'validator_rules' => [
+                        'settings.mail_host' => 'safehost',
                         'settings.mail_from' => 'required|email',
                     ],
                     'settings' => [
@@ -313,7 +314,7 @@ class SettingsController extends Controller
                     $env_value = json_encode($env_value);
                 }
 
-                if (!empty($settings_params[$option_name]['encrypt'])) {
+                if ($env_value !== '' && !empty($settings_params[$option_name]['encrypt'])) {
                     $env_value = encrypt($env_value);
                 }
 

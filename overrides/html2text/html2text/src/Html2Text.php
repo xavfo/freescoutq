@@ -368,6 +368,7 @@ class Html2Text
         $this->convertPre($text);
         $text = preg_replace($this->search, $this->replace, $text);
         $text = preg_replace_callback($this->callbackSearch, array($this, 'pregCallback'), $text);
+        $text = $text ?? '';
         $text = strip_tags($text);
         $text = preg_replace($this->entSearch, $this->entReplace, $text);
         $text = html_entity_decode($text, $this->htmlFuncFlags, self::ENCODING);
@@ -382,6 +383,8 @@ class Html2Text
         // Normalise empty lines
         $text = preg_replace("/\n\s+\n/", "\n\n", $text);
         $text = preg_replace("/[\n]{3,}/", "\n\n", $text);
+
+        $text = $text ?? '';
 
         // remove leading empty lines (can be produced by eg. P tag on the beginning)
         $text = ltrim($text, "\n");

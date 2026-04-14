@@ -18,7 +18,7 @@ return [
     | or any other location as required by the application or its packages.
     */
 
-    'version' => '1.8.208',
+    'version' => '1.8.214',
 
     /*
     |--------------------------------------------------------------------------
@@ -98,7 +98,7 @@ return [
     */
 
     'locale'          => env('APP_LOCALE', 'en'),
-    'locales'         => ['en', 'ar', 'zh-CN', 'hr', 'cs', 'da', 'nl', 'fi', 'fr', 'de', 'he', 'hu', 'it', 'ja', 'kz', 'ko', 'no', 'fa', 'pl', 'pt-PT', 'pt-BR', 'ro', 'ru', 'es', 'sk', 'sl', 'sv', 'tr', 'uk'],
+    'locales'         => ['en', 'ar', 'zh-CN', 'zh-TW', 'hr', 'cs', 'da', 'nl', 'fi', 'fr', 'de', 'he', 'hu', 'it', 'ja', 'kz', 'ko', 'no', 'fa', 'pl', 'pt-PT', 'pt-BR', 'ro', 'ru', 'es', 'sk', 'sl', 'sv', 'tr', 'uk'],
     'locales_rtl'     => ['ar', 'fa', 'he'],
     'default_locale'  => 'en',
 
@@ -165,7 +165,7 @@ return [
     | FreeScout API
     |-------------------------------------------------------------------------
     */
-    'freescout_api' => 'https://freescout.net/wp-json/',
+    'freescout_api' => 'https://api.freescout.net/wp-json/',
     'freescout_alt_api' => 'https://cdn.freescout.net/wp-json/',
 
     /*
@@ -276,6 +276,7 @@ return [
     // If HTML file is renamed into .txt for example it will be shown by the browser as HTML.
     // Regular expressions (#...#)
     'viewable_mime_types'    => env('APP_VIEWABLE_MIME_TYPES', ['image/.*', 'application/pdf', 'text/plain', 'text/x-diff', 'application/json', 'audio/.*']),
+    'non_viewable_mime_types'    => env('APP_NON_VIEWABLE_MIME_TYPES', ['image/svg.*']),
 
     /*
     |--------------------------------------------------------------------------
@@ -529,6 +530,24 @@ return [
     |-------------------------------------------------------------------------
     */
     'remote_host_white_list'    => env('APP_REMOTE_HOST_WHITE_LIST', ''),
+
+    /*
+    |--------------------------------------------------------------------------
+    | By default only the host specified in APP_URL is allowed.
+    | To allow additional hosts list them separating by commas.
+    |--------------------------------------------------------------------------
+    */
+    'trusted_hosts' => env('APP_TRUSTED_HOSTS', ''),
+
+    /*
+    |--------------------------------------------------------------------------
+    | If you get an error message saying that your browser doesn't support CSP,
+    | list your User-Agent in this parameter (https://www.whatismybrowser.com/detect/what-is-my-user-agent/).
+    | Use "|" symbol to separate multiple User-Agents.
+    | And don't forget to send your User-Agent to this issue: https://github.com/freescout-help-desk/freescout/issues/5331
+    |--------------------------------------------------------------------------
+    */
+    'allowed_user_agents' => env('APP_ALLOWED_USER_AGENTS', ''),
 
     /*
     |--------------------------------------------------------------------------

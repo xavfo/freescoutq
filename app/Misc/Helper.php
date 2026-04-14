@@ -203,16 +203,16 @@ class Helper
         'ca' => ['name'          => 'Català',
                  'name_en'       => 'Catalan',
         ],
-        'zh-CN' => ['name'          => '简体中文',
+        'zh-CN' => ['name'          => '简体中文 (Simplified Chinese)',
                     'name_en'       => 'Chinese (Simplified)',
         ],
-        'zh-SG' => ['name'          => '简体中文',
+        'zh-SG' => ['name'          => '简体中文 (Singapore)',
                     'name_en'       => 'Chinese (Singapore)',
         ],
-        'zh-TW' => ['name'          => '简体中文',
+        'zh-TW' => ['name'          => '繁體中文 (Traditional Chinese)',
                     'name_en'       => 'Chinese (Traditional)',
         ],
-        'zh-HK' => ['name'          => '简体中文',
+        'zh-HK' => ['name'          => '繁體中文 (Hong Kong)',
                     'name_en'       => 'Chinese (Hong Kong SAR)',
         ],
         'hr' => ['name'          => 'Hrvatski',
@@ -565,12 +565,44 @@ class Helper
         return $text;
     }
 
+    public static function stripTagsFromArray($data, $fields = [])
+    {
+        if (empty($fields)) {
+            $fields = array_keys($data);
+        }
+        foreach ($fields as $field) {
+            if (!array_key_exists($field, $data)) {
+                continue;
+            }
+            if (is_array($data[$field])) {
+                foreach ($data[$field] as $sub_field => $sub_data) {
+                    $data[$field][$sub_field] = self::stripTagsFromArray($sub_data);
+                }
+            } else {
+                if ($data[$field] !== null) {
+                    $data[$field] = \Helper::stripTags($data[$field]);
+                }
+            }
+        }
+
+        return $data;
+    }
+
     public static function stripDangerousTags($html, $allowed_tags = [])
     {
         // <script src="/storage/attachment/8/1/1/test.js?id=7&token=c4786c4497db3c6254a0c310623a43c3">
         // <iframe src="/storage/attachment/8/1/1/1.html?id=95&token=3dced8dc80305031b358119f3d156204"></iframe>
         // <object data="/storage/attachment/8/1/1/1.html?id=95&token=3dced8dc80305031b358119f3d156204" type="text/html"></object>
-        $tags = ['script', 'form', 'iframe', 'object'];
+        $tags = [
+            'script',
+            'form',
+            'iframe',
+            'link',
+            'object',
+            'meta',
+            // https://github.com/freescout-help-desk/freescout/security/advisories/GHSA-fh99-wr77-pxq3
+            'style',
+        ];
         $attrs = 'src|data';
 
         $tags = array_diff($tags, $allowed_tags);
@@ -1427,7 +1459,7 @@ class Helper
     /**
      * Check if host is available on the port specified.
      */
-    public static function checkPort($host, $port, $timeout = 10)
+    public static function checkPort($host, $port)
     {
         $connection = @fsockopen($host, $port);
         if (is_resource($connection)) {
@@ -1461,6 +1493,14 @@ class Helper
     public static function safePassword($password)
     {
         return str_repeat("*", mb_strlen($password ?? ''));
+    }
+
+    /**
+     * Check if the password consists of asterisks only.
+     */
+    public static function isSafePassword($password)
+    {
+        return preg_match("/^\*+$/", $password ?? '');
     }
 
     /**
@@ -1506,17 +1546,23 @@ class Helper
                         $link = $match[2];
                         $link = substr($link, strlen($match[3]));
                         //return '<' . array_push($links, "<a $attr href=\"$protocol://$link\">$protocol://$link</a>") . '>';
-                        return $match[1].'<' . array_push($links, "<a $attr href=\"$protocol://$link\">".$match[2]."</a>") . '>';
+                        $href = htmlspecialchars($protocol.'://'.$link, ENT_QUOTES, 'UTF-8');
+                        $link_text = htmlspecialchars($match[2], ENT_QUOTES, 'UTF-8');
+                        return $match[1].'<' . array_push($links, "<a $attr href=\"".$href."\">".$link_text."</a>") . '>';
                     }, $value) ?: $value;
                     break;
                 case 'mail':
                     $value = preg_replace_callback('~([^\s<>]+?@[^\s<]+?\.[^\s<]+)(?<![\.,:\)])~', function ($match) use (&$links, $attr) {
-                        return '<' . array_push($links, "<a $attr href=\"mailto:{$match[1]}\">{$match[1]}</a>") . '>';
+                        $href = htmlspecialchars($match[1], ENT_QUOTES, 'UTF-8');
+                        $link_text = htmlspecialchars($match[1], ENT_QUOTES, 'UTF-8');
+                        return '<' . array_push($links, "<a $attr href=\"mailto:{$href}\">{$link_text}</a>") . '>';
                     }, $value) ?: $value;
                     break;
                 default:
                     $value = preg_replace_callback('~' . preg_quote($protocol, '~') . '://([^\s<]+?)(?<![\.,:])~i', function ($match) use ($protocol, &$links, $attr) {
-                        return '<' . array_push($links, "<a $attr href=\"$protocol://{$match[1]}\">$protocol://{$match[1]}</a>") . '>';
+                        $href = htmlspecialchars("$protocol://{$match[1]}", ENT_QUOTES, 'UTF-8');
+                        $link_text = htmlspecialchars("$protocol://{$match[1]}", ENT_QUOTES, 'UTF-8');
+                        return '<' . array_push($links, "<a $attr href=\"{$href}\">{$link_text}</a>") . '>';
                     }, $value) ?: $value;
                     break;
             }
@@ -1629,6 +1675,10 @@ class Helper
                 $content = $storage->get($file_path);
             }
             if ($content) {
+                // Remove comments from SVG content.
+                // https://github.com/freescout-help-desk/freescout/security/advisories/GHSA-cvr8-cw5c-5pfw
+                $content = preg_replace('/<!--(.|\s)*?-->/', '', $content);
+
                 $svg_sanitizer = new \enshrined\svgSanitize\Sanitizer();
                 $clean_content = $svg_sanitizer->sanitize($content);
                 if (!$clean_content)  {
@@ -1755,6 +1805,10 @@ class Helper
     public static function downloadRemoteFileAsTmp($uri, $follow_redirects = true)
     {
         try {
+            // Sanitize URL first.
+            if (!self::sanitizeRemoteUrl($uri)) {
+                throw new \Exception('URL points to the local host', 1);
+            }
             $contents = self::getRemoteFileContents($uri, $follow_redirects);
 
             if (!$contents) {
@@ -1797,6 +1851,7 @@ class Helper
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             if ($follow_redirects) {
                 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+                curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
             }
             curl_setopt($ch, CURLOPT_URL, $url);
             \Helper::setCurlDefaultOptions($ch);
@@ -1832,7 +1887,27 @@ class Helper
         }
     }
 
-    public static function sanitizeRemoteUrl($url, $throw_exception = false)
+    public static function sanitizeRemoteUrl($url, $throw_exception = false, $follow_redirects = true)
+    {
+        if (!self::checkUrlIpAndHost($url, $throw_exception)) {
+            return '';
+        }
+
+        // Follow redirects and check final IP/host.
+        if ($follow_redirects) {
+            $last_redirected_url = self::curlGetLastRedirectedUrl($url);
+
+            if ($last_redirected_url != $url) {
+                if (!self::checkUrlIpAndHost($url, $throw_exception)) {
+                    return '';
+                }
+            }
+        }
+
+        return $url;
+    }
+
+    public static function checkUrlIpAndHost($url, $throw_exception = false)
     {
         $parts = parse_url($url ?? '');
 
@@ -1854,7 +1929,16 @@ class Helper
         $hostname = gethostname();
         $host_ip = gethostbyname($hostname);
 
+        // Can also include IP masks.
         $restricted_hosts = [
+            '::1', // IPv6 loopback
+            '::ffff:127.0.0.1', // IPv4-mapped IPv6
+            '169.254.169.254', // AWS/GCP/Azure metadata
+            'fd00::/8', // IPv6 ULA
+            '10.0.0.0/8', // RFC1918
+            '172.16.0.0/12', // RFC1918
+            'fd00::/8', // RFC1918
+            '192.168.0.0/16',
             '0.0.0.0',
             '127.0.0.1',
             'localhost',
@@ -1865,29 +1949,78 @@ class Helper
             $_SERVER['LOCAL_ADDR'] ?? '',
         ];
 
-        if (in_array($parts['host'], $restricted_hosts) && !in_array($parts['host'], $host_white_list)) {
-            if ($throw_exception) {
-                throw new \Exception(__('Domain or IP address is not allowed: :%host%. Whitelist it via APP_REMOTE_HOST_WHITE_LIST .env parameter.', ['%host%' => $parts['host']]), 1);
-            } else {
-                return '';
+        if (!in_array($parts['host'], $host_white_list)) {
+            if (in_array($parts['host'], $restricted_hosts) || self::checkIpByMask($parts['host'], $restricted_hosts)) {
+                if ($throw_exception) {
+                    throw new \Exception(__('Domain or IP address is not allowed: :%host%. Whitelist it via APP_REMOTE_HOST_WHITE_LIST .env parameter.', ['%host%' => $parts['host']]), 1);
+                } else {
+                    return '';
+                }
             }
         }
 
         // Sanitize host IP address.
         $remote_host_ip = gethostbyname($parts['host']);
-        if (in_array($remote_host_ip, ['0.0.0.0', '127.0.0.1', $host_ip, $_SERVER['SERVER_ADDR'] ?? '', $_SERVER['LOCAL_ADDR'] ?? ''])
-            && !in_array($remote_host_ip, $host_white_list)
-        ) {
-            if ($throw_exception) {
-                throw new \Exception(__('Domain or IP address is not allowed: :%host%. Whitelist it via APP_REMOTE_HOST_WHITE_LIST .env parameter.', ['%host%' => $remote_host_ip]), 1);
-            } else {
-                return '';
+        if (!in_array($remote_host_ip, $host_white_list)) {
+            if (in_array($remote_host_ip, $restricted_hosts) || self::checkIpByMask($remote_host_ip, $restricted_hosts)) {
+                if ($throw_exception) {
+                    throw new \Exception(__('Domain or IP address is not allowed: :%host%. Whitelist it via APP_REMOTE_HOST_WHITE_LIST .env parameter.', ['%host%' => $remote_host_ip]), 1);
+                } else {
+                    return '';
+                }
             }
         }
 
         return $url;
     }
 
+    // Get last redicred URL.
+    public static function curlGetLastRedirectedUrl($url, $throw_exception = false)
+    {
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        // Get last effective URL.
+        
+        \Helper::setCurlDefaultOptions($ch);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 180);
+        curl_exec($ch);
+
+        $curl_errno = curl_errno($ch);
+
+        if ($curl_errno) {
+            if ($throw_exception) {
+                throw new \Exception('Could not check URL contents by following redirects: '.$curl_errno, 1);
+            } else {
+                return '';
+            }
+        }
+
+        $last_redirected_url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+        if (PHP_VERSION_ID < 80000) {
+            \curl_close($ch);
+        }
+
+        return $last_redirected_url;
+    }
+
+    // Returns mask or false.
+    public static function checkIpByMask($ip, $masks = [])
+    {
+        foreach ($masks as $mask) {
+            if (!strstr($mask, '/')) {
+                continue;
+            }
+            if (\Symfony\Component\HttpFoundation\IpUtils::checkIp($ip, $mask)) {
+                return $mask;
+            }
+        }
+        return false;
+    }
     public static function getTempDir()
     {
         return sys_get_temp_dir() ?: '/tmp';
@@ -1954,10 +2087,7 @@ class Helper
         $file_name = preg_replace('/[' . $escaped_regex . ']/', '_', $file_name);
         $file_name = preg_replace("/[\t\r\n]/", '', $file_name);
         // Remove unprintable characters and invalid unicode characters.
-        // https://github.com/freescout-help-desk/freescout/issues/4681
-        $file_name = preg_replace("#\p{C}+#u", '', $file_name);
-        // https://github.com/freescout-help-desk/freescout/issues/2123#issuecomment-2775392740
-        $file_name = preg_replace("#\p{Cf}+#u", '', $file_name);
+        $file_name = self::stripUnprintableAndUnsafeChars($file_name);
 
         // Check extension.
         $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
@@ -2007,7 +2137,7 @@ class Helper
 
     public static function getWebCronHash()
     {
-        return md5(config('app.key').'web_cron_hash');
+        return hash_hmac('sha512', 'web_cron_hash', config('app.key'));
     }
 
     public static function getProtocol($url = '')
@@ -2195,6 +2325,23 @@ class Helper
         return app()->runningInConsole();
     }
 
+    public static function isCron()
+    {
+        if (!self::isConsole()) {
+            return false;
+        }
+        if (php_sapi_name() == 'cli') {   
+            if (isset($_SERVER['TERM'])) {   
+                return false;
+            } else {   
+                return true;
+            }   
+        } else { 
+            // The script was run from a webserver, or something else.
+            return false;
+        }
+    }
+
     /**
      * Show a warning when background jobs sending emails
      * are not processed for some time.
@@ -2330,7 +2477,7 @@ class Helper
         }
 
         //  frame-src https://recaptcha.net; connect-src https://recaptcha.net;
-
+        //  The frame-ancestors is ignored when delivered via a meta element.
         $csp = "<meta http-equiv=\"Content-Security-Policy\" content=\"base-uri 'none'; default-src 'self' ".self::sanitizeCsp($script_domains)."; img-src * 'self' data:; font-src * 'self' data:; style-src * 'self' 'unsafe-inline'; form-action 'self' ".self::sanitizeCsp(\Eventy::filter('csp.form_action', ''), true)."; frame-src * 'self'; script-src 'self' 'nonce-".$nonce."' "
             .self::sanitizeCsp($script_src).";"
             .self::sanitizeCsp(config('app.csp_custom').self::sanitizeCsp(\Eventy::filter('csp.custom', '')))."\">";
@@ -2416,5 +2563,96 @@ class Helper
     public static function startsiWith($text, $string)
     {
         return (stripos($text, $string) === 0);
+    }
+
+    // The iconv_mime_decode() may throw an error even with ICONV_MIME_DECODE_CONTINUE_ON_ERROR.
+    // https://github.com/freescout-help-desk/freescout/issues/5265
+    public static function iconvMimeDecode($string, $mode = ICONV_MIME_DECODE_CONTINUE_ON_ERROR, $encoding = "UTF-8")
+    {
+        try {
+            return iconv_mime_decode($string, $mode, $encoding);
+        } catch (\Exception $e) {
+            self::logException($e);
+            return $string;
+        }
+    }
+
+    public static function stripUnprintableChars($string)
+    {
+        // Remove unprintable characters and invalid unicode characters.
+        // https://github.com/freescout-help-desk/freescout/issues/4681
+        $string = preg_replace("#\p{C}+#u", '', $string);
+        // https://github.com/freescout-help-desk/freescout/issues/2123#issuecomment-2775392740
+        $string = preg_replace("#\p{Cf}+#u", '', $string);
+
+        return $string;
+    }
+
+    public static function stripUnsafeChars($string)
+    {
+        // Remove Unicode control characters and null bytes
+        $string = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $string);
+
+        return $string;
+    }
+
+    public static function stripUnprintableAndUnsafeChars($string)
+    {
+        $string = self::stripUnprintableChars($string);
+        $string = self::stripUnsafeChars($string);
+
+        return $string;
+    }
+
+    public static function filterArrayByKeys($list, $allowed_keys)
+    {
+        foreach ($list as $key => $value) {
+            if (!in_array($key, $allowed_keys)) {
+                unset($list[$key]);
+            }
+        }
+
+        return $list;
+    }
+
+    /**
+     * Check if the visitor's browser supports CSP (Content Security Policy).
+     */
+    public static function isCspSupported($ua = '')
+    {
+        if (!$ua) {
+            $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        }
+
+        // Normalize
+        $ua = strtolower($ua);
+
+        // Internet Explorer (all versions) → NO proper CSP support
+        if (strpos($ua, 'msie') !== false || strpos($ua, 'trident/') !== false) {
+            return false;
+        }
+
+        // Chrome (CSP supported from version 25+ reliably)
+        if (preg_match('/chrome\/(\d+)/', $ua, $matches)) {
+            return (int)$matches[1] >= 25;
+        }
+
+        // Firefox (CSP supported from version 23+)
+        if (preg_match('/firefox\/(\d+)/', $ua, $matches)) {
+            return (int)$matches[1] >= 23;
+        }
+
+        // Safari (CSP supported from version 7+)
+        if (preg_match('/version\/(\d+).+safari/', $ua, $matches)) {
+            return (int)$matches[1] >= 7;
+        }
+
+        // Edge (EdgeHTML and Chromium-based both support CSP)
+        if (preg_match('/edge\/(\d+)/', $ua, $matches) || preg_match('/edg\/(\d+)/', $ua, $matches)) {
+            return (int)$matches[1] >= 12;
+        }
+
+        // Default to true for modern browsers.
+        return true;
     }
 }

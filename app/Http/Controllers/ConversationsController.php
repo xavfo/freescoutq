@@ -413,7 +413,7 @@ class ConversationsController extends Controller
                 $thread = new Thread();
                 $thread->body = $orig_thread->body;
                 // If this is a forwarded message, try to fetch From
-                preg_match_all("/From:[^<\n]+<([^<\n]+)>/m", html_entity_decode(strip_tags($thread->body)), $m);
+                preg_match_all("/From:[^<\n]+<([^<\n]+)>/m", html_entity_decode(\Helper::stripTags($thread->body)), $m);
 
                 if (!empty($m[1])) {
                     foreach ($m[1] as $value) {
@@ -924,7 +924,12 @@ class ConversationsController extends Controller
 
                     if ($is_phone && $is_create) {
                         // Phone.
-                        $phone_customer_data = $this->processPhoneCustomer($request);
+                        $phone_customer_data = $this->processPhoneCustomer($request, $user);
+
+                        if (!empty($phone_customer_data['msg'])) {
+                            $response['msg'] = $phone_customer_data['msg'];
+                            break;
+                        }
 
                         $customer_email = $phone_customer_data['customer_email'];
                         $customer = $phone_customer_data['customer'];
@@ -1144,6 +1149,7 @@ class ConversationsController extends Controller
                             $forwarded_conversation->save();
 
                             $forwarded_thread = $thread->replicate();
+                            $forwarded_thread->setTo($recipient_email);
 
                             $forwarded_conversations[] = $forwarded_conversation;
                             $forwarded_threads[] = $forwarded_thread;
@@ -1480,7 +1486,12 @@ class ConversationsController extends Controller
 
                         if ($type == Conversation::TYPE_PHONE) {
                             // Phone.
-                            $phone_customer_data = $this->processPhoneCustomer($request);
+                            $phone_customer_data = $this->processPhoneCustomer($request, $user);
+
+                            if (!empty($phone_customer_data['msg'])) {
+                                $response['msg'] = $phone_customer_data['msg'];
+                                break;
+                            }
 
                             $customer_email = $phone_customer_data['customer_email'];
                             $customer = $phone_customer_data['customer'];
@@ -1834,6 +1845,7 @@ class ConversationsController extends Controller
             case 'conversation_change_customer':
                 $conversation = Conversation::find($request->conversation_id);
                 $customer_email = $request->customer_email;
+                $target_customer = Customer::getByEmail($request->customer_email);
 
                 if (!$conversation) {
                     $response['msg'] = __('Conversation not found');
@@ -1842,6 +1854,10 @@ class ConversationsController extends Controller
                     $response['msg'] = __('Not enough permissions');
                 }
                 if (!$response['msg'] && !$conversation->mailbox->userHasAccess($user->id)) {
+                    $response['msg'] = __('Not enough permissions');
+                }
+
+                if (!$response['msg'] && $target_customer && !$user->can('view', $target_customer)) {
                     $response['msg'] = __('Not enough permissions');
                 }
 
@@ -2007,7 +2023,7 @@ class ConversationsController extends Controller
                     $thread->edited_at = date('Y-m-d H:i:s');
                     $response['body'] = $thread->getCleanBody();
 
-                    if (strip_tags($response['body'])) {
+                    if (\Helper::stripTags($response['body'])) {
 
                         // Update the preview for the conversation if needed.
                         $last_thread = $thread->conversation->getLastThread([Thread::TYPE_CUSTOMER, Thread::TYPE_MESSAGE, Thread::TYPE_NOTE]);
@@ -2397,10 +2413,16 @@ class ConversationsController extends Controller
                 $customer = Customer::getByEmail($request->customer_email);
 
                 if ($customer) {
-                    // Previous conversations
-                    $prev_conversations = [];
 
                     $mailbox = Mailbox::find($request->mailbox_id);
+
+                    if (!$mailbox || !$mailbox->userHasAccess($user->id)) {
+                        $response['msg'] = __('Not enough permissions');
+                        break;
+                    }
+
+                    // Previous conversations
+                    $prev_conversations = [];
 
                     if ($mailbox && $mailbox->userHasAccess($user->id)) {
                         $conversation_id = (int)$request->conversation_id ?? 0;
@@ -2886,13 +2908,27 @@ class ConversationsController extends Controller
         }
 
         $conversations = [];
+
         if (\Eventy::filter('search.is_needed', true, 'conversations')) {
-            $conversations = $this->searchQuery($user, $q, $filters);
+            // If search string starts with # - try to find conversation by number.
+            if (\Str::startsWith($q, '#')) {
+                $conv_number = ltrim($q, '#');
+                if (is_numeric($conv_number)) {
+                    $conversation = Conversation::where(Conversation::numberFieldName(), $conv_number)->first();
+                    if ($conversation) {
+                        $conversations[] = $conversation;
+                    }
+                }
+            }
+
+            if (!count($conversations)) {
+                $conversations = $this->searchQuery($user, $q, $filters);
+            }
         }
 
         // Jump to the conversation if searching by conversation number.
         if (count($conversations) == 1 
-            && $conversations[0]->number == $q
+            && ($conversations[0]->number == $q || $conversations[0]->number == ltrim($q, '#'))
             && empty($filters)
             && !$request->x_embed
         ) {
@@ -3208,6 +3244,11 @@ class ConversationsController extends Controller
             abort(404);
         }
 
+        if ($thread->created_by_user_id != \Auth::id()) {
+            \Session::flash('flash_error_floating', __('Sending can not be undone'));
+            return redirect()->away($conversation->url($conversation->folder_id));
+        }
+
         $conversation = $thread->conversation;
         $this->authorize('view', $conversation);
 
@@ -3284,7 +3325,7 @@ class ConversationsController extends Controller
     /**
      * Find or create customer when creating a Phone conversation.
      */
-    public function processPhoneCustomer($request)
+    public function processPhoneCustomer($request, $user)
     {
         $customer_data = [];
         $customer_email = '';
@@ -3311,6 +3352,14 @@ class ConversationsController extends Controller
         if (!$request->customer_id && is_numeric($request_name)) {
             // Try to find customer by ID.
             $customer = Customer::find($request_name);
+            if ($customer) {
+                if (!$user->can('view', $customer)) {
+                    return [
+                        'status' => 'error',
+                        'msg' => __('Inaccessible customer'),
+                    ];
+                }
+            }
         }
 
         if (!$customer && $request->to_email) {
@@ -3338,6 +3387,12 @@ class ConversationsController extends Controller
                 if ($request->customer_id) {
                     $customer = Customer::find($request->customer_id);
                     if ($customer) {
+                        if (!$user->can('view', $customer)) {
+                            return [
+                                'status' => 'error',
+                                'msg' => __('Inaccessible customer'),
+                            ];
+                        }
                         // Add email to customer.
                         $customer->addEmail($customer_email, true);
                     } else {
@@ -3350,6 +3405,12 @@ class ConversationsController extends Controller
                 if ($request->customer_id) {
                     $customer = Customer::find($request->customer_id);
                     if ($customer) {
+                        if (!$user->can('view', $customer)) {
+                            return [
+                                'status' => 'error',
+                                'msg' => __('Inaccessible customer'),
+                            ];
+                        }
                         $customer->setData($customer_data, false, true);
                     }
                 }

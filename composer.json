@@ -220,6 +220,7 @@
             "Psy\\VarDumper\\": "overrides/psy/psysh/src/VarDumper/",
             "TijsVerkoyen\\CssToInlineStyles\\": "overrides/tijsverkoyen/css-to-inline-styles/src/",
             "TijsVerkoyen\\CssToInlineStyles\\Css\\Property\\": "overrides/tijsverkoyen/css-to-inline-styles/src/Css/Property/",
+            "Html2Text\\": "overrides/html2text/html2text/src/",
             "PHPUnit\\Runner\\": "overrides/phpunit/phpunit/src/Runner/"
         },
         "exclude-from-classmap": [
@@ -354,6 +355,7 @@
             "vendor/devfactory/minify/src/Providers/BaseProvider.php",
             "vendor/barryvdh/laravel-debugbar/src/DataFormatter/QueryFormatter.php",
             "vendor/barryvdh/laravel-debugbar/src/DataCollector/QueryCollector.php",
+            "vendor/barryvdh/laravel-debugbar/src/DataCollector/ViewCollector.php",
             "vendor/symfony/process/Process.php",
             "vendor/symfony/http-kernel/UriSigner.php",
             "vendor/symfony/http-kernel/Exception/HttpException.php",
@@ -510,6 +512,7 @@
             "vendor/erusev/parsedown/Parsedown.php",
             "vendor/tijsverkoyen/css-to-inline-styles/src/CssToInlineStyles.php",
             "vendor/tijsverkoyen/css-to-inline-styles/src/Css/Property/Processor.php",
+            "vendor/html2text/html2text/src/Html2Text.php",
             "vendor/phpunit/phpunit/src/Runner/PhptTestCase.php"
         ]
     },

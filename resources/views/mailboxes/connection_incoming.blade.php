@@ -26,7 +26,7 @@
                     {{ csrf_field() }}
 
                     <div class="descr-block">
-                        {!! __("You can read more about fetching emails :%a_begin%here:%a_end%.", ['%a_begin%' => '<a href="'.config('app.freescout_repo').'/wiki/Fetching-Emails" target="_blank">', '%a_end%' =>'</a>']) !!}
+                        {!! __("You can read more about fetching emails :%a_begin%here:%a_end%.", ['%a_begin%' => '<a href="'.htmlspecialchars(config('app.freescout_repo')).'/wiki/Fetching-Emails" target="_blank">', '%a_end%' =>'</a>']) !!}
                     </div>
 
                     <div class="form-group margin-top">
@@ -75,7 +75,7 @@
                             <div class="col-sm-6">
                                 <input id="in_server" type="text" class="form-control input-sized" name="in_server" value="{{ old('in_server', $mailbox->in_server) }}" maxlength="255">
 
-                                {{--@include('partials/field_error', ['field'=>'in_server'])--}}
+                                @include('partials/field_error', ['field'=>'in_server'])
                             </div>
                         </div>
 
@@ -153,12 +153,21 @@
                                 $new_fetching_library = config('app.new_fetching_library');
                             @endphp
                             <div class="col-sm-6">
+                                @php
+                                    $in_encryption = old('in_encryption', $mailbox->in_encryption);
+                                    // Set TLS encryption by default.
+                                    if ($in_encryption == App\Mailbox::IN_ENCRYPTION_NONE) {
+                                        if (!$mailbox->inSettingsSaved()) {
+                                            $in_encryption = App\Mailbox::IN_ENCRYPTION_TLS;
+                                        }
+                                    }
+                                @endphp
                                 <select id="in_encryption" class="form-control input-sized" name="in_encryption" @if ($mailbox->out_method == App\Mailbox::OUT_METHOD_SMTP) required @endif autofocus>
-                                    <option value="{{ App\Mailbox::IN_ENCRYPTION_NONE }}" @if (old('in_encryption', $mailbox->in_encryption) == App\Mailbox::IN_ENCRYPTION_NONE)selected="selected"@endif>{{ __('None') }}</option>
-                                    <option value="{{ App\Mailbox::IN_ENCRYPTION_SSL }}" @if (old('in_encryption', $mailbox->in_encryption) == App\Mailbox::IN_ENCRYPTION_SSL)selected="selected"@endif>SSL</option>
-                                    <option value="{{ App\Mailbox::IN_ENCRYPTION_TLS }}" @if (old('in_encryption', $mailbox->in_encryption) == App\Mailbox::IN_ENCRYPTION_TLS)selected="selected"@endif>{{ 'TLS' }}@if (!$new_fetching_library) &nbsp;(+StartTLS)@endif</option>
+                                    <option value="{{ App\Mailbox::IN_ENCRYPTION_NONE }}" @if ($in_encryption == App\Mailbox::IN_ENCRYPTION_NONE)selected="selected"@endif>{{ __('None') }}</option>
+                                    <option value="{{ App\Mailbox::IN_ENCRYPTION_SSL }}" @if ($in_encryption == App\Mailbox::IN_ENCRYPTION_SSL)selected="selected"@endif>SSL</option>
+                                    <option value="{{ App\Mailbox::IN_ENCRYPTION_TLS }}" @if ($in_encryption == App\Mailbox::IN_ENCRYPTION_TLS)selected="selected"@endif>{{ 'TLS' }}@if (!$new_fetching_library) &nbsp;(+StartTLS)@endif</option>
                                     @if ($new_fetching_library)
-                                        <option value="{{ App\Mailbox::IN_ENCRYPTION_STARTTLS }}" @if (old('in_encryption', $mailbox->in_encryption) == App\Mailbox::IN_ENCRYPTION_STARTTLS)selected="selected"@endif>TLS &nbsp;(+StartTLS)</option>
+                                        <option value="{{ App\Mailbox::IN_ENCRYPTION_STARTTLS }}" @if ($in_encryption == App\Mailbox::IN_ENCRYPTION_STARTTLS)selected="selected"@endif>TLS &nbsp;(+StartTLS)</option>
                                     @endif
                                 </select>
 
@@ -199,7 +208,7 @@
 
                                 @include('partials/field_error', ['field'=>'in_validate_cert'])
 
-                                <div class="form-help">{!! __("Make sure to save settings before checking connection.") !!}</div>
+                                <div class="form-help">{{ __("Make sure to save settings before checking connection.") }}</div>
                             </div>
                         </div>
 
@@ -209,7 +218,7 @@
 
                                 <div class="col-sm-6">
                                     <input id="imap_sent_folder" type="text" class="form-control input-sized" name="imap_sent_folder" value="{{ old('imap_sent_folder', $mailbox->imap_sent_folder) }}" maxlength="50" placeholder="Sent">
-                                    <div class="form-help">{!! __("Enter IMAP folder name to save outgoing replies if your mail service provider does not do it automatically (Gmail does it), otherwise leave it blank.") !!}</div>
+                                    <div class="form-help">{{ __("Enter IMAP folder name to save outgoing replies if your mail service provider does not do it automatically (Gmail does it), otherwise leave it blank.") }}</div>
                                 </div>
                             </div>
                             <hr/>
