@@ -80,7 +80,6 @@ return array(
     'PHPUnit\\Runner\\' => array($baseDir . '/overrides/phpunit/phpunit/src/Runner'),
     'Nwidart\\Modules\\' => array($baseDir . '/overrides/nwidart/laravel-modules/src', $vendorDir . '/nwidart/laravel-modules/src'),
     'Monolog\\' => array($vendorDir . '/monolog/monolog/src/Monolog'),
-    'Modules\\' => array($baseDir . '/Modules'),
     'Mews\\Purifier\\' => array($baseDir . '/overrides/mews/purifier/src', $vendorDir . '/mews/purifier/src'),
     'Lord\\Laroute\\Routes\\' => array($baseDir . '/overrides/lord/laroute/src/Routes'),
     'Lord\\Laroute\\' => array($vendorDir . '/lord/laroute/src'),

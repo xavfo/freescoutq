@@ -95,6 +95,7 @@
         "fs-comment": "Above new lines are listed files containing custom updates. Below - only PHP compatibility updates.",
         "psr-4": {
             "App\\": "app/",
+            "Modules\\RestApi\\": "Modules/RestApi/",
             "Axn\\Laroute\\Routes\\": "overrides/axn/laravel-laroute/src/Routes/",
             "Webklex\\PHPIMAP\\": "overrides/webklex/php-imap/src/",
             "RachidLaasri\\LaravelInstaller\\Helpers\\": "overrides/rachidlaasri/laravel-installer/src/Helpers/",
@@ -388,8 +389,8 @@
             "vendor/laravel/framework/src/Illuminate/Filesystem/Filesystem.php",
             "vendor/laravel/framework/src/Illuminate/Console/Application.php",
             "vendor/laravel/framework/src/Illuminate/Console/Command.php",
-            "vendor/rap2hpoutre/laravel-log-viewer/src/Rap2hpoutre/LaravelLogViewer/LaravelLogViewer.php",
-            "vendor/rap2hpoutre/laravel-log-viewer/src/controllers/LogViewerController.php",
+            "overrides/rap2hpoutre/laravel-log-viewer/src/Rap2hpoutre/LaravelLogViewer/LaravelLogViewer.php",
+            "overrides/rap2hpoutre/laravel-log-viewer/src/Rap2hpoutre/LaravelLogViewer/LogViewerController.php",
             "vendor/symfony/console/Descriptor/TextDescriptor.php",
             "vendor/symfony/console/Input/ArgvInput.php",
             "vendor/symfony/console/Input/ArrayInput.php",
@@ -451,7 +452,7 @@
             "vendor/swiftmailer/swiftmailer/lib/classes/Swift/KeyCache/ArrayKeyCache.php",
             "vendor/swiftmailer/swiftmailer/lib/classes/Swift/KeyCache/DiskKeyCache.php",
             "vendor/swiftmailer/swiftmailer/lib/classes/Swift/KeyCache/SimpleKeyCacheInputStream.php",
-            "vendor/natxet/cssmin/src/CssMin.php",
+            "overrides/natxet/cssmin/src/CssMin.php",
             "vendor/webklex/php-imap/src/Header.php",
             "vendor/webklex/php-imap/src/Structure.php",
             "vendor/webklex/php-imap/src/Message.php",
@@ -482,10 +483,11 @@
             "vendor/mews/purifier/src/Purifier.php",
             "vendor/mtdowling/cron-expression/src/Cron/CronExpression.php",
             "vendor/laravel/framework/src/Illuminate/Mail/Mailer.php",
-            "vendor/filp/whoops/src/Whoops/Run.php",
-            "vendor/filp/whoops/src/Whoops/Handler/PrettyPageHandler.php",
-            "vendor/filp/whoops/src/Whoops/Handler/PlainTextHandler.php",
-            "vendor/filp/whoops/src/Whoops/Util/TemplateHelper.php",
+            "overrides/filp/whoops/src/Whoops/RunInterface.php",
+            "overrides/filp/whoops/src/Whoops/Run.php",
+            "overrides/filp/whoops/src/Whoops/Handler/PrettyPageHandler.php",
+            "overrides/filp/whoops/src/Whoops/Handler/PlainTextHandler.php",
+            "overrides/filp/whoops/src/Whoops/Util/TemplateHelper.php",
             "vendor/laravel/framework/src/Illuminate/Validation/Factory.php",
             "vendor/laravel/framework/src/Illuminate/Validation/ValidationRuleParser.php",
             "vendor/laravel/framework/src/Illuminate/Foundation/Validation/ValidatesRequests.php",
@@ -535,7 +537,6 @@
             "@php artisan key:generate"
         ],
         "pre-install-cmd": [
-            "@php -r \"@mkdir('vendor/natxet/cssmin/src', 775);\""
         ],
         "pre-autoload-dump": [
             "@php -r \"file_put_contents('vendor/guzzlehttp/promises/src/functions_include.php', str_replace('/functions.php', '/../../../../overrides/guzzlehttp/promises/src/functions.php', file_get_contents('vendor/guzzlehttp/promises/src/functions_include.php')));\"",

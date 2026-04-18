@@ -18,7 +18,7 @@ return [
     | or any other location as required by the application or its packages.
     */
 
-    'version' => '1.8.214',
+    'version' => '1.8.215',
 
     /*
     |--------------------------------------------------------------------------
@@ -97,7 +97,7 @@ return [
     | locales: available locales
     */
 
-    'locale'          => env('APP_LOCALE', 'en'),
+    'locale'          => env('APP_LOCALE', 'es'),
     'locales'         => ['en', 'ar', 'zh-CN', 'zh-TW', 'hr', 'cs', 'da', 'nl', 'fi', 'fr', 'de', 'he', 'hu', 'it', 'ja', 'kz', 'ko', 'no', 'fa', 'pl', 'pt-PT', 'pt-BR', 'ro', 'ru', 'es', 'sk', 'sl', 'sv', 'tr', 'uk'],
     'locales_rtl'     => ['ar', 'fa', 'he'],
     'default_locale'  => 'en',
@@ -106,7 +106,7 @@ return [
     | app()->setLocale() in Localize middleware also changes config('app.locale'),
     | so we are keeping real app locale in real_locale parameter.
     */
-   'real_locale' => env('APP_LOCALE', 'en'),
+    'real_locale' => env('APP_LOCALE', 'es'),
 
     /*
     |--------------------------------------------------------------------------
@@ -158,7 +158,7 @@ return [
     | FreeScout website
     |-------------------------------------------------------------------------
     */
-    'freescout_url' => 'https://freescout.net',
+    'freescout_url' => 'https://www.qsoftware.biz',
 
     /*
     |--------------------------------------------------------------------------
@@ -180,7 +180,7 @@ return [
     | FreeScout email
     |-------------------------------------------------------------------------
     */
-    'freescout_email' => 'support@freescout.net',
+    'freescout_email' => 'soporte@qsoftware.biz',
 
     /*
     |--------------------------------------------------------------------------
@@ -226,6 +226,7 @@ return [
     | App colors.
     |--------------------------------------------------------------------------
     */
+    /*
     'colors' => [
         'main_light'    => '#0078d7',
         'main_dark'     => '#005a9e',
@@ -235,6 +236,18 @@ return [
         'text_user'     => '#8d959b',
         'bg_user_reply' => '#f4f8fd',
         'bg_note'       => '#fffbf1',
+    ],
+    */
+
+    'colors' => [
+        'main_light'    => '#2ec4b6', // Turquesa brillante
+        'main_dark'     => '#07183d', // Azul verdoso profundo
+        'note'          => '#74d9a8', // Verde claro para notas
+        'text_note'     => '#2a7a5e', // Verde oscuro para texto en notas
+        'text_customer' => '#6c757d', // Gris moderno (mejor legibilidad)
+        'text_user'     => '#6c757d', // Consistencia con cliente
+        'bg_user_reply' => '#f0f9fb', // Fondo suave para respuestas
+        'bg_note'       => '#f8fdf7', // Fondo muy suave para notas
     ],
 
     /*
@@ -268,9 +281,9 @@ return [
     | The list should be in sync with /storage/app/public/uploads/.htaccess and nginx config.
     |-------------------------------------------------------------------------
     */
-    'viewable_attachments'    => env('APP_VIEWABLE_ATTACHMENTS') 
-                                ? explode(',', env('APP_VIEWABLE_ATTACHMENTS'))
-                                : ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'apng', 'bmp', 'gif', 'ico', 'cur', 'png', 'tif', 'tiff', 'webp', 'pdf', 'txt', 'diff', 'patch', 'json', 'mp3', 'wav', 'ogg', 'wma'],
+    'viewable_attachments'    => env('APP_VIEWABLE_ATTACHMENTS')
+        ? explode(',', env('APP_VIEWABLE_ATTACHMENTS'))
+        : ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'apng', 'bmp', 'gif', 'ico', 'cur', 'png', 'tif', 'tiff', 'webp', 'pdf', 'txt', 'diff', 'patch', 'json', 'mp3', 'wav', 'ogg', 'wma'],
 
     // Additional restriction by mime type.
     // If HTML file is renamed into .txt for example it will be shown by the browser as HTML.
@@ -368,7 +381,7 @@ return [
     */
     'use_new_pop3_lib'    => env('APP_USE_NEW_POP3_LIB', true),
 
-     /*
+    /*
     |--------------------------------------------------------------------------
     | Dashboard path.
     |
