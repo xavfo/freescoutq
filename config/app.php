@@ -18,7 +18,7 @@ return [
     | or any other location as required by the application or its packages.
     */
 
-    'version' => '1.8.215',
+    'version' => '1.8.208',
 
     /*
     |--------------------------------------------------------------------------
@@ -97,10 +97,10 @@ return [
     | locales: available locales
     */
 
-    'locale'          => env('APP_LOCALE', 'es'),
-    'locales'         => ['en', 'ar', 'zh-CN', 'zh-TW', 'hr', 'cs', 'da', 'nl', 'fi', 'fr', 'de', 'he', 'hu', 'it', 'ja', 'kz', 'ko', 'no', 'fa', 'pl', 'pt-PT', 'pt-BR', 'ro', 'ru', 'es', 'sk', 'sl', 'sv', 'tr', 'uk'],
+    'locale'          => env('APP_LOCALE', 'en'),
+    'locales'         => ['en', 'ar', 'zh-CN', 'hr', 'cs', 'da', 'nl', 'fi', 'fr', 'de', 'he', 'hu', 'it', 'ja', 'kz', 'ko', 'no', 'fa', 'pl', 'pt-PT', 'pt-BR', 'ro', 'ru', 'es', 'sk', 'sl', 'sv', 'tr', 'uk'],
     'locales_rtl'     => ['ar', 'fa', 'he'],
-    'default_locale'  => 'en',
+    'default_locale'  => 'es',
 
     /*
     | app()->setLocale() in Localize middleware also changes config('app.locale'),
@@ -158,14 +158,14 @@ return [
     | FreeScout website
     |-------------------------------------------------------------------------
     */
-    'freescout_url' => 'https://www.qsoftware.biz',
+    'freescout_url' => 'https://freescout.net',
 
     /*
     |--------------------------------------------------------------------------
     | FreeScout API
     |-------------------------------------------------------------------------
     */
-    'freescout_api' => 'https://api.freescout.net/wp-json/',
+    'freescout_api' => 'https://freescout.net/wp-json/',
     'freescout_alt_api' => 'https://cdn.freescout.net/wp-json/',
 
     /*
@@ -180,7 +180,7 @@ return [
     | FreeScout email
     |-------------------------------------------------------------------------
     */
-    'freescout_email' => 'soporte@qsoftware.biz',
+    'freescout_email' => 'support@freescout.net',
 
     /*
     |--------------------------------------------------------------------------
@@ -226,7 +226,6 @@ return [
     | App colors.
     |--------------------------------------------------------------------------
     */
-    /*
     'colors' => [
         'main_light'    => '#0078d7',
         'main_dark'     => '#005a9e',
@@ -236,18 +235,6 @@ return [
         'text_user'     => '#8d959b',
         'bg_user_reply' => '#f4f8fd',
         'bg_note'       => '#fffbf1',
-    ],
-    */
-
-    'colors' => [
-        'main_light'    => '#2ec4b6', // Turquesa brillante
-        'main_dark'     => '#07183d', // Azul verdoso profundo
-        'note'          => '#74d9a8', // Verde claro para notas
-        'text_note'     => '#2a7a5e', // Verde oscuro para texto en notas
-        'text_customer' => '#6c757d', // Gris moderno (mejor legibilidad)
-        'text_user'     => '#6c757d', // Consistencia con cliente
-        'bg_user_reply' => '#f0f9fb', // Fondo suave para respuestas
-        'bg_note'       => '#f8fdf7', // Fondo muy suave para notas
     ],
 
     /*
@@ -289,7 +276,6 @@ return [
     // If HTML file is renamed into .txt for example it will be shown by the browser as HTML.
     // Regular expressions (#...#)
     'viewable_mime_types'    => env('APP_VIEWABLE_MIME_TYPES', ['image/.*', 'application/pdf', 'text/plain', 'text/x-diff', 'application/json', 'audio/.*']),
-    'non_viewable_mime_types'    => env('APP_NON_VIEWABLE_MIME_TYPES', ['image/svg.*']),
 
     /*
     |--------------------------------------------------------------------------
@@ -543,24 +529,6 @@ return [
     |-------------------------------------------------------------------------
     */
     'remote_host_white_list'    => env('APP_REMOTE_HOST_WHITE_LIST', ''),
-
-    /*
-    |--------------------------------------------------------------------------
-    | By default only the host specified in APP_URL is allowed.
-    | To allow additional hosts list them separating by commas.
-    |--------------------------------------------------------------------------
-    */
-    'trusted_hosts' => env('APP_TRUSTED_HOSTS', ''),
-
-    /*
-    |--------------------------------------------------------------------------
-    | If you get an error message saying that your browser doesn't support CSP,
-    | list your User-Agent in this parameter (https://www.whatismybrowser.com/detect/what-is-my-user-agent/).
-    | Use "|" symbol to separate multiple User-Agents.
-    | And don't forget to send your User-Agent to this issue: https://github.com/freescout-help-desk/freescout/issues/5331
-    |--------------------------------------------------------------------------
-    */
-    'allowed_user_agents' => env('APP_ALLOWED_USER_AGENTS', ''),
 
     /*
     |--------------------------------------------------------------------------
