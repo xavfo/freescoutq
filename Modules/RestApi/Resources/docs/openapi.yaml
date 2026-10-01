@@ -1,0 +1,551 @@
+openapi: 3.0.0
+info:
+  title: FreeScout REST API
+  description: REST API for managing conversations, threads, and customers in FreeScout
+  version: 1.0.0
+  contact:
+    name: FreeScout
+    url: https://freescout.net
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Development server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: API Token (Bearer token)
+
+  schemas:
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        mailbox_id:
+          type: integer
+          example: 1
+        subject:
+          type: string
+          example: "Need help with order"
+        preview:
+          type: string
+          example: "I need help with my recent order..."
+        customer:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+        status:
+          type: integer
+          enum: [1, 2, 3, 4]
+          example: 1
+          description: "1=active, 2=pending, 3=closed, 4=spam"
+        status_name:
+          type: string
+          enum: [active, pending, closed, spam]
+        state:
+          type: integer
+        type:
+          type: integer
+          example: 1
+        threads_count:
+          type: integer
+        assignee:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_message_preview:
+          type: string
+
+    Thread:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversation_id:
+          type: integer
+        type:
+          type: integer
+          enum: [2, 3, 8]
+          description: "2=message, 3=note, 8=chat"
+        type_name:
+          type: string
+          enum: [message, note, chat]
+        from:
+          type: string
+        to:
+          type: string
+        body:
+          type: string
+        attachments_count:
+          type: integer
+        created_by:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [user, customer]
+            name:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        full_name:
+          type: string
+        emails:
+          type: array
+          items:
+            type: string
+        phone:
+          type: string
+        photo_url:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        conversations_count:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        status_code:
+          type: integer
+        errors:
+          type: object
+
+security:
+  - BearerAuth: []
+
+paths:
+  /conversations:
+    get:
+      summary: List conversations
+      operationId: listConversations
+      parameters:
+        - name: status
+          in: query
+          description: "Filter by status codes (comma-separated: 1,2,3,4)"
+          schema:
+            type: string
+        - name: customer_id
+          in: query
+          description: Filter by customer ID
+          schema:
+            type: integer
+        - name: mailbox_id
+          in: query
+          description: Filter by mailbox ID
+          schema:
+            type: integer
+        - name: assigned_to
+          in: query
+          description: Filter by assigned user ID
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          description: "Sort field (prefix with - for descending: -created_at)"
+          schema:
+            type: string
+            default: "-created_at"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Conversation'
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      per_page:
+                        type: integer
+                      last_page:
+                        type: integer
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create conversation
+      operationId: createConversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mailbox_id, subject, to, body]
+              properties:
+                mailbox_id:
+                  type: integer
+                subject:
+                  type: string
+                to:
+                  type: array
+                  items:
+                    type: string
+                    format: email
+                cc:
+                  type: array
+                  items:
+                    type: string
+                    format: email
+                bcc:
+                  type: array
+                  items:
+                    type: string
+                    format: email
+                customer_id:
+                  type: integer
+                body:
+                  type: string
+                type:
+                  type: integer
+                  enum: [1, 2, 3, 4]
+                status:
+                  type: integer
+                  enum: [1, 2, 3, 4]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '400':
+          description: Validation error
+        '403':
+          description: Unauthorized
+
+  /conversations/{id}:
+    get:
+      summary: Get conversation
+      operationId: getConversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '404':
+          description: Not found
+
+    put:
+      summary: Update conversation
+      operationId: updateConversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: integer
+                  enum: [1, 2, 3, 4]
+                assigned_to:
+                  type: integer
+                customer_id:
+                  type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+
+    delete:
+      summary: Delete conversation
+      operationId: deleteConversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /conversations/{id}/threads:
+    get:
+      summary: List threads in conversation
+      operationId: listThreads
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Thread'
+                  meta:
+                    type: object
+
+    post:
+      summary: Add thread to conversation
+      operationId: createThread
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                type:
+                  type: integer
+                  enum: [2, 3, 8]
+                  default: 2
+                body:
+                  type: string
+                cc:
+                  type: array
+                  items:
+                    type: string
+                bcc:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thread'
+
+  /threads/{id}:
+    get:
+      summary: Get thread
+      operationId: getThread
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thread'
+
+    put:
+      summary: Update thread
+      operationId: updateThread
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  type: string
+      responses:
+        '200':
+          description: Success
+
+    delete:
+      summary: Delete thread
+      operationId: deleteThread
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+
+  /customers:
+    get:
+      summary: List customers
+      operationId: listCustomers
+      parameters:
+        - name: search
+          in: query
+          description: Search by name or email
+          schema:
+            type: string
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: "-created_at"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Customer'
+
+    post:
+      summary: Create customer
+      operationId: createCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [first_name, emails]
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                emails:
+                  type: array
+                  items:
+                    type: string
+                    format: email
+                phone:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+
+  /customers/{id}:
+    get:
+      summary: Get customer
+      operationId: getCustomer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Customer'
+                  - type: object
+                    properties:
+                      recent_conversations:
+                        type: array
+                        items:
+                          type: object

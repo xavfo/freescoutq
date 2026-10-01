@@ -88,3 +88,13 @@
   - Verificar que el dashboard carga correctamente sin doble barra en assets
   - Verificar que las rutas web de FreeScout siguen funcionando con CSRF
   - Asegurarse de que todos los tests pasan; consultar al usuario si surgen dudas.
+
+- [ ] 6. Fix Bug 3 - Endpoints de escritura fallan con `in_array()`
+  - [ ] 6.1 Obtener el código completo de `Modules/RestApi` desde la instalación remota y colocarlo en `Modules/RestApi/` en este clon. No traer `.env`, tokens ni dumps de conversaciones.
+  - [ ] 6.2 Inspeccionar `ConversationsController::show()`, `ConversationsController::store()`, `ThreadsController::store()`, el endpoint `index` y la persistencia de `mailbox_ids`. Confirmar la causa antes de editar.
+  - [ ] 6.3 Añadir pruebas de regresión para `show`, creación de conversación y creación de thread; cubrir buzones CSV, acceso a todos, token restringido y acceso denegado.
+  - [ ] 6.4 Normalizar `mailbox_ids` sin debilitar la autorización. Ejecutar las pruebas focalizadas y validar en una instancia de prueba, sin crear tickets de producción.
+  - [ ] 6.5 Confirmar el mecanismo de asignación al usuario global `1`; completar y probar `freescout_client.php` solo después de fijar el contrato.
+  - [ ] 6.6 Confirmar si `type` y `to` admiten WhatsApp/SMS o si la API solo soporta correo.
+  - [ ] 6.7 Rotar el token expuesto fuera del repositorio y comprobar que no quede en archivos, historial de comandos ni tests.
+  - Detalle del error reportado, contrato y supuestos: [bugfix.md](./bugfix.md#bug-3---endpoints-de-escritura-devuelven-http-500).

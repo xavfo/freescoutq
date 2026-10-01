@@ -1,0 +1,19 @@
+{
+  "name": "RestApi",
+  "alias": "restapi",
+  "description": "REST API module for managing conversations, threads, and customers by qsoftware.biz",
+  "version": "1.0.0",
+  "detailsUrl": "https://www.qsoftware.biz",
+  "author": "FreeScout",
+  "authorUrl": "https://www.qsoftware.biz",
+  "requiredAppVersion": "1.0.2",
+  "license": "AGPL-3.0",
+  "keywords": ["api", "rest", "tickets", "conversations"],
+  "active": 1,
+  "order": 20,
+  "providers": [
+    "Modules\\RestApi\\Providers\\RestApiServiceProvider"
+  ],
+  "aliases": {},
+  "requires": []
+}

@@ -1,0 +1,20 @@
+{
+  "name": "freescout/rest-api",
+  "description": "REST API module for FreeScout",
+  "type": "library",
+  "license": "AGPL-3.0",
+  "authors": [
+    {
+      "name": "FreeScout",
+      "homepage": "https://freescout.net"
+    }
+  ],
+  "require": {
+    "php": "^7.4|^8.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Modules\\RestApi\\": ""
+    }
+  }
+}

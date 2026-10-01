@@ -113,3 +113,36 @@ FOR ALL X WHERE NOT isBugCondition_Bug2(X) DO
   ASSERT generateAssetUrl(X) = generateAssetUrl'(X)
 END FOR
 ```
+
+---
+
+## Bug 3 - Endpoints de escritura devuelven HTTP 500
+
+> Estado: reportado desde la instancia remota; no reproducido en este clon porque falta el código de `Modules/RestApi`.
+
+### Comportamiento observado
+
+- `GET /api/v1/conversations` funciona con el token probado y devuelve HTTP 200.
+- `GET /api/v1/conversations/{id}`, `POST /api/v1/conversations` y `POST /api/v1/conversations/{id}/threads` devuelven HTTP 500.
+- Error reportado: `in_array() expects parameter 2 to be array, string given`, en `ConversationsController::show()` (línea 117), `ConversationsController::store()` (línea 139) y `ThreadsController::store()` (línea 111).
+- También falló un payload mínimo válido para crear una conversación. Según el reporte, no se creó ningún ticket durante esas pruebas.
+
+### Hipótesis por verificar
+
+El formulario de tokens acepta IDs de buzones como CSV (por ejemplo, `1,2`) y vacío significa acceso a todos los buzones. Es posible que los handlers de escritura pasen el CSV directamente a `in_array()`, mientras que `index` lo normaliza. Es una hipótesis: confirmar cómo se guarda, carga y usa el valor antes de editar.
+
+### Contrato de creación reportado
+
+`POST /api/v1/conversations` requiere `mailbox_id` entero, `subject` string, `to` como array de correos válidos y `body` string. `status` es opcional y entero (`1` para activo); la cadena `active` se rechaza. `type` está validado como enum y `email` se rechaza. No se encontró un campo de asignación documentado para el agente.
+
+### Pendientes para resolver
+
+1. Recuperar el módulo completo desde `/var/www/vhosts/qsoftware.biz/tickets.qsoftware.biz/Modules/RestApi/` e incorporarlo en `Modules/RestApi/` en este clon. `.gitignore` ya permite versionar ese módulo sin incluir los demás. No copiar `.env`, tokens ni dumps de conversaciones.
+2. Revisar los handlers mencionados, `index` y la persistencia de `mailbox_ids`. Confirmar el tipo real y la hipótesis CSV antes de cambiar código.
+3. Añadir pruebas de regresión para `show`, creación de conversación y creación de thread; cubrir IDs CSV, acceso a todos los buzones, tokens restringidos y acceso denegado.
+4. Corregir la normalización sin debilitar la autorización. Ejecutar pruebas focalizadas y validar en una instancia de prueba. No probar escrituras en producción sin un procedimiento que impida crear tickets reales.
+5. Confirmar desde el código cómo asignar el usuario global `1`; no asumir el nombre de un campo. Después completar y probar `freescout_client.php` contra el contrato real.
+6. Confirmar si `type` y `to` permiten fuentes no email (WhatsApp/SMS); documentar limitaciones o el mecanismo compatible.
+7. Rotar el token expuesto fuera del repositorio. No incluirlo en documentación, commits, comandos registrados ni tests.
+
+Ver lista de trabajo en [tasks.md](./tasks.md), tarea 6.
