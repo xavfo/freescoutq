@@ -46,6 +46,7 @@
                                 <th>ID</th>
                                 <th>Usuario</th>
                                 <th>Nombre</th>
+                                <th>Buzones</th>
                                 <th>Activo</th>
                                 <th>Límite de tasa</th>
                                 <th>Creado</th>
@@ -59,6 +60,13 @@
                                 <td>{{ $token->id }}</td>
                                 <td>{{ $token->user->getFullName() }}</td>
                                 <td>{{ $token->name }}</td>
+                                <td>
+                                    @if($token->mailbox_ids)
+                                    {{ implode(', ', $token->mailbox_ids) }}
+                                    @else
+                                    <span class="text-muted">Todos</span>
+                                    @endif
+                                </td>
                                 <td>{!! $token->active ? '<span class="badge badge-success">Sí</span>' : '<span
                                         class="badge badge-danger">No</span>' !!}</td>
                                 <td>{{ $token->rate_limit }}/h</td>

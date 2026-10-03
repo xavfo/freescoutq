@@ -21,9 +21,9 @@ class ThreadsApiTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::factory()->create();
-        $this->mailbox = Mailbox::factory()->create();
-        $this->conversation = Conversation::factory()->create([
+        $this->user = factory(User::class)->create();
+        $this->mailbox = factory(Mailbox::class)->create();
+        $this->conversation = factory(Conversation::class)->create([
             'mailbox_id' => $this->mailbox->id,
         ]);
 
@@ -42,7 +42,7 @@ class ThreadsApiTest extends TestCase
 
     public function test_list_threads()
     {
-        Thread::factory()->count(3)->create([
+        factory(Thread::class, 3)->create([
             'conversation_id' => $this->conversation->id,
         ]);
 
@@ -52,7 +52,7 @@ class ThreadsApiTest extends TestCase
         );
 
         $response->assertStatus(200);
-        $response->assertJsonCount(3, 'data');
+        $this->assertCount(3, $response->json()['data']);
     }
 
     public function test_create_thread()
@@ -67,7 +67,7 @@ class ThreadsApiTest extends TestCase
         );
 
         $response->assertStatus(201);
-        $response->assertJson(['body' => 'This is a reply']);
+        $this->assertSame('This is a reply', $response->json()['body']);
     }
 
     public function test_create_thread_validation()
@@ -86,7 +86,7 @@ class ThreadsApiTest extends TestCase
 
     public function test_update_thread()
     {
-        $thread = Thread::factory()->create([
+        $thread = factory(Thread::class)->create([
             'conversation_id' => $this->conversation->id,
             'user_id' => $this->user->id,
             'body' => 'Original content',
@@ -99,12 +99,12 @@ class ThreadsApiTest extends TestCase
         );
 
         $response->assertStatus(200);
-        $response->assertJson(['body' => 'Updated content']);
+        $this->assertSame('Updated content', $response->json()['body']);
     }
 
     public function test_delete_thread()
     {
-        $thread = Thread::factory()->create([
+        $thread = factory(Thread::class)->create([
             'conversation_id' => $this->conversation->id,
         ]);
 

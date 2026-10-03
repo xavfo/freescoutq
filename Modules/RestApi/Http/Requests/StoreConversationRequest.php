@@ -23,6 +23,7 @@ class StoreConversationRequest extends FormRequest
             'bcc' => 'array',
             'bcc.*' => 'email',
             'customer_id' => 'integer|exists:customers,id',
+            'assigned_to' => 'integer|exists:users,id',
             'body' => 'required|string',
             'type' => 'in:1,2,3,4',
             'status' => 'in:1,2,3,4',
@@ -37,6 +38,7 @@ class StoreConversationRequest extends FormRequest
             'subject.required' => 'Subject is required',
             'to.required' => 'At least one recipient email is required',
             'to.*.email' => 'Invalid email format',
+            'assigned_to.exists' => 'Assignee user does not exist',
             'body.required' => 'Body content is required',
         ];
     }

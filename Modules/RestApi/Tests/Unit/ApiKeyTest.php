@@ -22,7 +22,7 @@ class ApiKeyTest extends TestCase
         $hash = hash('sha256', $token);
 
         $apiKey = ApiKey::create([
-            'user_id' => User::factory()->create()->id,
+            'user_id' => factory(User::class)->create()->id,
             'name' => 'Test',
             'token' => $token,
             'token_hash' => $hash,
@@ -35,7 +35,7 @@ class ApiKeyTest extends TestCase
 
     public function test_token_expiration()
     {
-        $user = User::factory()->create();
+        $user = factory(User::class)->create();
         $token = ApiKey::generateToken();
 
         $apiKey = ApiKey::create([
@@ -52,7 +52,7 @@ class ApiKeyTest extends TestCase
 
     public function test_mailbox_restriction()
     {
-        $user = User::factory()->create();
+        $user = factory(User::class)->create();
         $token = ApiKey::generateToken();
 
         $apiKey = ApiKey::create([
@@ -64,8 +64,51 @@ class ApiKeyTest extends TestCase
             'active' => true,
         ]);
 
-        $mailboxIds = json_decode($apiKey->mailbox_ids);
-        $this->assertCount(3, $mailboxIds);
-        $this->assertContains(1, $mailboxIds);
+        // mailbox_ids is normalized by the model accessor/mutator.
+        $this->assertSame([1, 2, 3], $apiKey->mailbox_ids);
+        $this->assertFalse($apiKey->hasAccessToAllMailboxes());
+        $this->assertTrue($apiKey->canAccessMailbox(2));
+        $this->assertFalse($apiKey->canAccessMailbox(9));
+    }
+
+    public function test_mailbox_restriction_is_not_double_encoded()
+    {
+        $user = factory(User::class)->create();
+        $token = ApiKey::generateToken();
+
+        $apiKey = ApiKey::create([
+            'user_id' => $user->id,
+            'name' => 'Double encoded',
+            'token' => $token,
+            'token_hash' => hash('sha256', $token),
+            // The CSV the web form sends, as well as an already encoded array,
+            // must both end up stored as a single JSON array.
+            'mailbox_ids' => '7,8',
+            'active' => true,
+        ]);
+
+        $raw = \DB::table('api_keys')->where('id', $apiKey->id)->value('mailbox_ids');
+
+        $this->assertSame('[7,8]', $raw);
+        $this->assertSame([7, 8], $apiKey->fresh()->mailbox_ids);
+    }
+
+    public function test_empty_mailbox_restriction_means_all_mailboxes()
+    {
+        $user = factory(User::class)->create();
+        $token = ApiKey::generateToken();
+
+        $apiKey = ApiKey::create([
+            'user_id' => $user->id,
+            'name' => 'All mailboxes',
+            'token' => $token,
+            'token_hash' => hash('sha256', $token),
+            'mailbox_ids' => null,
+            'active' => true,
+        ]);
+
+        $this->assertNull($apiKey->mailbox_ids);
+        $this->assertTrue($apiKey->hasAccessToAllMailboxes());
+        $this->assertTrue($apiKey->canAccessMailbox(4));
     }
 }

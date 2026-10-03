@@ -7,6 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'enshrined\\svgSanitize\\' => array($vendorDir . '/enshrined/svg-sanitize/src'),
+    'Modules\\RestApi\\' => array($baseDir . '/Modules/RestApi'),
     'XdgBaseDir\\' => array($vendorDir . '/dnoegel/php-xdg-base-dir/src'),
     'Whoops\\Util\\' => array($baseDir . '/overrides/filp/whoops/src/Whoops/Util'),
     'Whoops\\Handler\\' => array($baseDir . '/overrides/filp/whoops/src/Whoops/Handler'),

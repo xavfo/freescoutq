@@ -13,6 +13,13 @@ class RestApiServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // Config must be merged during register(), otherwise config('rest-api')
+        // is not available yet when it is copied below.
+        $this->mergeConfigFrom(
+            __DIR__ . '/../Config/config.php',
+            'rest-api'
+        );
+
         $this->app['config']->set(
             'modules.rest-api',
             config('rest-api')
@@ -43,11 +50,6 @@ class RestApiServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../Config/config.php' => config_path('rest-api.php'),
         ], 'config');
-
-        $this->mergeConfigFrom(
-            __DIR__ . '/../Config/config.php',
-            'rest-api'
-        );
     }
 
     /**
@@ -117,9 +119,7 @@ class RestApiServiceProvider extends ServiceProvider
     /**
      * Register event listeners
      */
-    protected function registerEventListeners()
-    {
-    }
+    protected function registerEventListeners() {}
 
     /**
      * Get the services provided by the provider.

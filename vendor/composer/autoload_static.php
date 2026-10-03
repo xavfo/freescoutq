@@ -6,7 +6,7 @@ namespace Composer\Autoload;
 
 class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
 {
-    public static $files = array (
+    public static $files = array(
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
         '023d27dca8066ef29e6739335ea73bad' => __DIR__ . '/..' . '/symfony/polyfill-php70/bootstrap.php',
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
@@ -31,17 +31,17 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
         'b3709fe79d9d3d527d2a936c35802426' => __DIR__ . '/../..' . '/app/Misc/Functions.php',
     );
 
-    public static $prefixLengthsPsr4 = array (
+    public static $prefixLengthsPsr4 = array(
         'e' =>
-        array (
+        array(
             'enshrined\\svgSanitize\\' => 22,
         ),
         'X' =>
-        array (
+        array(
             'XdgBaseDir\\' => 11,
         ),
         'W' =>
-        array (
+        array(
             'Whoops\\Util\\' => 12,
             'Whoops\\Handler\\' => 15,
             'Whoops\\' => 7,
@@ -49,17 +49,17 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
             'Watson\\Rememberable\\' => 20,
         ),
         'U' =>
-        array (
+        array(
             'Underscore\\' => 11,
         ),
         'T' =>
-        array (
+        array(
             'TorMorten\\Eventy\\' => 17,
             'TijsVerkoyen\\CssToInlineStyles\\Css\\Property\\' => 44,
             'TijsVerkoyen\\CssToInlineStyles\\' => 31,
         ),
         'S' =>
-        array (
+        array(
             'Symfony\\Polyfill\\Php70\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
@@ -100,7 +100,7 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
             'Spatie\\Activitylog\\' => 19,
         ),
         'R' =>
-        array (
+        array(
             'Rap2hpoutre\\LaravelLogViewer\\' => 29,
             'Ramsey\\Uuid\\' => 12,
             'RachidLaasri\\LaravelInstaller\\Providers\\' => 40,
@@ -111,7 +111,7 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
             'RachidLaasri\\LaravelInstaller\\' => 30,
         ),
         'P' =>
-        array (
+        array(
             'Psy\\VarDumper\\' => 14,
             'Psy\\TimeitCommand\\' => 18,
             'Psy\\Output\\' => 11,
@@ -129,16 +129,17 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
             'PHPUnit\\Runner\\' => 15,
         ),
         'N' =>
-        array (
+        array(
             'Nwidart\\Modules\\' => 16,
         ),
         'M' =>
-        array (
+        array(
             'Monolog\\' => 8,
             'Mews\\Purifier\\' => 14,
+            'Modules\\RestApi\\' => 14,
         ),
         'L' =>
-        array (
+        array(
             'Lord\\Laroute\\Routes\\' => 20,
             'Lord\\Laroute\\' => 13,
             'League\\MimeTypeDetection\\' => 25,
@@ -146,13 +147,13 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
             'Laravel\\Tinker\\' => 15,
         ),
         'J' =>
-        array (
+        array(
             'Javoscript\\MacroableModels\\' => 27,
             'JakubOnderka\\PhpConsoleHighlighter\\' => 35,
             'JakubOnderka\\PhpConsoleColor\\' => 29,
         ),
         'I' =>
-        array (
+        array(
             'Illuminate\\View\\Concerns\\' => 25,
             'Illuminate\\View\\Compilers\\Concerns\\' => 35,
             'Illuminate\\View\\Compilers\\' => 26,
@@ -199,11 +200,11 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
             'Illuminate\\' => 11,
         ),
         'H' =>
-        array (
+        array(
             'Html2Text\\' => 10,
         ),
         'G' =>
-        array (
+        array(
             'GuzzleHttp\\Psr7\\' => 16,
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\Handler\\' => 19,
@@ -212,16 +213,16 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
             'GuzzleHttp\\' => 11,
         ),
         'F' =>
-        array (
+        array(
             'Fideloper\\Proxy\\' => 16,
             'Faker\\Provider\\' => 15,
         ),
         'E' =>
-        array (
+        array(
             'Egulias\\EmailValidator\\' => 23,
         ),
         'D' =>
-        array (
+        array(
             'Dotenv\\' => 7,
             'Doctrine\\Deprecations\\' => 22,
             'Doctrine\\DBAL\\Schema\\' => 21,
@@ -238,7 +239,7 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
             'DebugBar\\' => 9,
         ),
         'C' =>
-        array (
+        array(
             'Cron\\' => 5,
             'Codedge\\Updater\\SourceRepositoryTypes\\' => 38,
             'Codedge\\Updater\\' => 16,
@@ -247,747 +248,751 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
             'Carbon\\' => 7,
         ),
         'B' =>
-        array (
+        array(
             'Barryvdh\\TranslationManager\\' => 28,
             'Barryvdh\\Debugbar\\DataFormatter\\' => 32,
             'Barryvdh\\Debugbar\\DataCollector\\' => 32,
             'Barryvdh\\Debugbar\\' => 18,
         ),
         'A' =>
-        array (
+        array(
             'Axn\\Laroute\\Routes\\' => 19,
             'Axn\\Laroute\\' => 12,
             'App\\' => 4,
         ),
     );
 
-    public static $prefixDirsPsr4 = array (
+    public static $prefixDirsPsr4 = array(
         'enshrined\\svgSanitize\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/enshrined/svg-sanitize/src',
         ),
         'XdgBaseDir\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/dnoegel/php-xdg-base-dir/src',
         ),
         'Whoops\\Util\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/filp/whoops/src/Whoops/Util',
         ),
         'Whoops\\Handler\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/filp/whoops/src/Whoops/Handler',
         ),
         'Whoops\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/filp/whoops/src/Whoops',
         ),
         'Webklex\\PHPIMAP\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/webklex/php-imap/src',
             1 => __DIR__ . '/..' . '/webklex/php-imap/src',
         ),
         'Watson\\Rememberable\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/watson/rememberable/src',
         ),
         'Underscore\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/anahkiasen/underscore-php/src',
             1 => __DIR__ . '/..' . '/anahkiasen/underscore-php/tests',
         ),
         'TorMorten\\Eventy\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/tormjens/eventy/src',
             1 => __DIR__ . '/..' . '/tormjens/eventy/src',
         ),
         'TijsVerkoyen\\CssToInlineStyles\\Css\\Property\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/tijsverkoyen/css-to-inline-styles/src/Css/Property',
         ),
         'TijsVerkoyen\\CssToInlineStyles\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/tijsverkoyen/css-to-inline-styles/src',
             1 => __DIR__ . '/..' . '/tijsverkoyen/css-to-inline-styles/src',
         ),
         'Symfony\\Polyfill\\Php70\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/symfony/polyfill-php70',
         ),
         'Symfony\\Polyfill\\Mbstring\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
         ),
         'Symfony\\Polyfill\\Intl\\Normalizer\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer',
         ),
         'Symfony\\Polyfill\\Intl\\Idn\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/symfony/polyfill-intl-idn',
         ),
         'Symfony\\Polyfill\\Ctype\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/symfony/polyfill-ctype',
         ),
         'Symfony\\Component\\VarDumper\\Dumper\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/var-dumper/Dumper',
         ),
         'Symfony\\Component\\VarDumper\\Cloner\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/var-dumper/Cloner',
         ),
         'Symfony\\Component\\VarDumper\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/symfony/var-dumper',
         ),
         'Symfony\\Component\\Translation\\Loader\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/translation/Loader',
         ),
         'Symfony\\Component\\Translation\\Formatter\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/translation/Formatter',
         ),
         'Symfony\\Component\\Translation\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/translation',
             1 => __DIR__ . '/..' . '/symfony/translation',
         ),
         'Symfony\\Component\\Routing\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/routing',
             1 => __DIR__ . '/..' . '/symfony/routing',
         ),
         'Symfony\\Component\\Process\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/process',
             1 => __DIR__ . '/..' . '/symfony/process',
         ),
         'Symfony\\Component\\HttpKernel\\HttpCache\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/http-kernel/HttpCache',
         ),
         'Symfony\\Component\\HttpKernel\\Exception\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/http-kernel/Exception',
         ),
         'Symfony\\Component\\HttpKernel\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/http-kernel',
             1 => __DIR__ . '/..' . '/symfony/http-kernel',
         ),
         'Symfony\\Component\\HttpFoundation\\File\\MimeType\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/http-foundation/File/MimeType',
         ),
         'Symfony\\Component\\HttpFoundation\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/http-foundation',
             1 => __DIR__ . '/..' . '/symfony/http-foundation',
         ),
         'Symfony\\Component\\Finder\\Iterator\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/finder/Iterator',
         ),
         'Symfony\\Component\\Finder\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/finder',
             1 => __DIR__ . '/..' . '/symfony/finder',
         ),
         'Symfony\\Component\\EventDispatcher\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/symfony/event-dispatcher',
         ),
         'Symfony\\Component\\Debug\\Exception\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/debug/Exception',
         ),
         'Symfony\\Component\\Debug\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/debug',
             1 => __DIR__ . '/..' . '/symfony/debug',
         ),
         'Symfony\\Component\\CssSelector\\XPath\\Extension\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/css-selector/XPath/Extension',
         ),
         'Symfony\\Component\\CssSelector\\XPath\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/css-selector/XPath',
         ),
         'Symfony\\Component\\CssSelector\\Parser\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/css-selector/Parser',
         ),
         'Symfony\\Component\\CssSelector\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/symfony/css-selector',
         ),
         'Symfony\\Component\\Console\\Question\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/console',
         ),
         'Symfony\\Component\\Console\\Output\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/console/Output',
         ),
         'Symfony\\Component\\Console\\Input\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/console/Input',
         ),
         'Symfony\\Component\\Console\\Helper\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/console/Helper',
         ),
         'Symfony\\Component\\Console\\Formatter\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/console/Formatter',
         ),
         'Symfony\\Component\\Console\\Exception\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/console/Exception',
         ),
         'Symfony\\Component\\Console\\Descriptor\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/console/Descriptor',
         ),
         'Symfony\\Component\\Console\\Command\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/console/Command',
         ),
         'Symfony\\Component\\Console\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/symfony/console',
             1 => __DIR__ . '/..' . '/symfony/console',
         ),
         'Spatie\\String\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/spatie/string/src',
             1 => __DIR__ . '/..' . '/spatie/string/src',
         ),
         'Spatie\\Activitylog\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/spatie/laravel-activitylog/src',
         ),
         'Rap2hpoutre\\LaravelLogViewer\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/rap2hpoutre/laravel-log-viewer/src/Rap2hpoutre/LaravelLogViewer',
         ),
         'Ramsey\\Uuid\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/ramsey/uuid/src',
             1 => __DIR__ . '/..' . '/ramsey/uuid/src',
         ),
         'RachidLaasri\\LaravelInstaller\\Providers\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/rachidlaasri/laravel-installer/src/Providers',
         ),
         'RachidLaasri\\LaravelInstaller\\Middleware\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/rachidlaasri/laravel-installer/src/Middleware',
         ),
         'RachidLaasri\\LaravelInstaller\\Helpers\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/rachidlaasri/laravel-installer/src/Helpers',
         ),
         'RachidLaasri\\LaravelInstaller\\Events\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/rachidlaasri/laravel-installer/src/Events',
         ),
         'RachidLaasri\\LaravelInstaller\\Controllers\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/rachidlaasri/laravel-installer/src/Controllers',
         ),
         'RachidLaasri\\LaravelInstaller\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/rachidlaasri/laravel-installer/src',
         ),
         'Psy\\VarDumper\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/psy/psysh/src/VarDumper',
         ),
         'Psy\\TimeitCommand\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/psy/psysh/src/TimeitCommand',
         ),
         'Psy\\Output\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/psy/psysh/src/Output',
         ),
         'Psy\\Input\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/psy/psysh/src/Input',
         ),
         'Psy\\Exception\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/psy/psysh/src/ErrorException',
         ),
         'Psy\\Command\\ListCommand\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/psy/psysh/src/Command/ListCommand',
         ),
         'Psy\\Command\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/psy/psysh/src/Command',
         ),
         'Psy\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/psy/psysh/src',
             1 => __DIR__ . '/..' . '/psy/psysh/src',
         ),
         'Psr\\SimpleCache\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/psr/simple-cache/src',
         ),
         'Psr\\Log\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
         ),
         'Psr\\Http\\Message\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
         'Psr\\Container\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/psr/container/src',
         ),
         'PhpParser\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
         ),
         'Patchwork\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/patchwork/utf8/src/Patchwork',
         ),
         'PHPUnit\\Runner\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/phpunit/phpunit/src/Runner',
         ),
         'Nwidart\\Modules\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/nwidart/laravel-modules/src',
             1 => __DIR__ . '/..' . '/nwidart/laravel-modules/src',
         ),
         'Monolog\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
         ),
+        'Modules\\RestApi\\' =>
+        array(
+            0 => __DIR__ . '/../..' . '/Modules/RestApi',
+        ),
         'Mews\\Purifier\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/mews/purifier/src',
             1 => __DIR__ . '/..' . '/mews/purifier/src',
         ),
         'Lord\\Laroute\\Routes\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/lord/laroute/src/Routes',
         ),
         'Lord\\Laroute\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/lord/laroute/src',
         ),
         'League\\MimeTypeDetection\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/league/mime-type-detection/src',
         ),
         'League\\Flysystem\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/league/flysystem/src',
             1 => __DIR__ . '/..' . '/league/flysystem/src',
         ),
         'Laravel\\Tinker\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/laravel/tinker/src',
         ),
         'Javoscript\\MacroableModels\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/javoscript/laravel-macroable-models/src',
             1 => __DIR__ . '/..' . '/javoscript/laravel-macroable-models/src',
         ),
         'JakubOnderka\\PhpConsoleHighlighter\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/jakub-onderka/php-console-highlighter/src',
         ),
         'JakubOnderka\\PhpConsoleColor\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/jakub-onderka/php-console-color/src',
         ),
         'Illuminate\\View\\Concerns\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/View/Concerns',
         ),
         'Illuminate\\View\\Compilers\\Concerns\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/View/Compilers/Concerns',
         ),
         'Illuminate\\View\\Compilers\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/View/Compilers',
         ),
         'Illuminate\\View\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/View',
         ),
         'Illuminate\\Validation\\Concerns\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Validation/Concerns',
         ),
         'Illuminate\\Validation\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Validation',
         ),
         'Illuminate\\Support\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Support',
         ),
         'Illuminate\\Session\\Middleware\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Session/Middleware',
         ),
         'Illuminate\\Session\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Session',
         ),
         'Illuminate\\Routing\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Routing',
         ),
         'Illuminate\\Queue\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Queue',
         ),
         'Illuminate\\Pipeline\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Pipeline',
         ),
         'Illuminate\\Pagination\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Pagination',
         ),
         'Illuminate\\Notifications\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Notifications',
         ),
         'Illuminate\\Mail\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Mail',
         ),
         'Illuminate\\Log\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Log',
         ),
         'Illuminate\\Http\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Http',
         ),
         'Illuminate\\Foundation\\Testing\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Foundation/Testing',
         ),
         'Illuminate\\Foundation\\Http\\Middleware\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Foundation/Http/Middleware',
         ),
         'Illuminate\\Foundation\\Bootstrap\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Foundation/Bootstrap',
         ),
         'Illuminate\\Foundation\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Foundation',
         ),
         'Illuminate\\Filesystem\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Filesystem',
         ),
         'Illuminate\\Events\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Events',
         ),
         'Illuminate\\Database\\Schema\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Database/Schema',
         ),
         'Illuminate\\Database\\Query\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Database/Query',
         ),
         'Illuminate\\Database\\Eloquent\\Relations\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Database/Eloquent/Relations',
         ),
         'Illuminate\\Database\\Eloquent\\Concerns\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Database/Eloquent/Concerns',
         ),
         'Illuminate\\Database\\Eloquent\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Database/Eloquent',
         ),
         'Illuminate\\Database\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Database',
         ),
         'Illuminate\\Cookie\\Middleware\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Cookie/Middleware',
         ),
         'Illuminate\\Cookie\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Cookie',
         ),
         'Illuminate\\Contracts\\Container\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Contracts/Container',
         ),
         'Illuminate\\Container\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Container',
         ),
         'Illuminate\\Console\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Console',
         ),
         'Illuminate\\Config\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Config',
         ),
         'Illuminate\\Cache\\Console\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Cache/Console',
         ),
         'Illuminate\\Cache\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Cache',
         ),
         'Illuminate\\Bus\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Bus',
         ),
         'Illuminate\\Broadcasting\\Broadcasters\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Broadcasting/Broadcasters',
         ),
         'Illuminate\\Broadcasting\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Broadcasting',
         ),
         'Illuminate\\Auth\\Middleware\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Auth/Middleware',
         ),
         'Illuminate\\Auth\\Access\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Auth/Access',
         ),
         'Illuminate\\Auth\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/laravel/framework/src/Illuminate/Auth',
         ),
         'Illuminate\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/laravel/framework/src/Illuminate',
         ),
         'Html2Text\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/html2text/html2text/src',
             1 => __DIR__ . '/..' . '/html2text/html2text/src',
             2 => __DIR__ . '/..' . '/html2text/html2text/test',
         ),
         'GuzzleHttp\\Psr7\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/guzzlehttp/psr7/src',
             1 => __DIR__ . '/..' . '/guzzlehttp/psr7/src',
         ),
         'GuzzleHttp\\Promise\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/guzzlehttp/promises/src',
             1 => __DIR__ . '/..' . '/guzzlehttp/promises/src',
         ),
         'GuzzleHttp\\Handler\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/guzzlehttp/guzzle/src/Handler',
         ),
         'GuzzleHttp\\Exception\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/guzzlehttp/guzzle/src/Exception',
         ),
         'GuzzleHttp\\Cookie\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/guzzlehttp/guzzle/src/Cookie',
         ),
         'GuzzleHttp\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/guzzlehttp/guzzle/src',
             1 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
         ),
         'Fideloper\\Proxy\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/fideloper/proxy/src',
         ),
         'Faker\\Provider\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/fzaninotto/faker/src/Faker/Provider',
         ),
         'Egulias\\EmailValidator\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/egulias/email-validator/EmailValidator',
         ),
         'Dotenv\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/vlucas/phpdotenv/src',
             1 => __DIR__ . '/..' . '/vlucas/phpdotenv/src',
         ),
         'Doctrine\\Deprecations\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/doctrine/deprecations/src',
         ),
         'Doctrine\\DBAL\\Schema\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/doctrine/dbal/lib/Doctrine/DBAL/Schema',
         ),
         'Doctrine\\DBAL\\Platforms\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/doctrine/dbal/lib/Doctrine/DBAL/Platforms',
         ),
         'Doctrine\\DBAL\\Driver\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/doctrine/dbal/lib/Doctrine/DBAL/Driver',
         ),
         'Doctrine\\DBAL\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/doctrine/dbal/lib/Doctrine/DBAL',
         ),
         'Doctrine\\Common\\Inflector\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/doctrine/inflector/lib/Doctrine/Common/Inflector',
         ),
         'Doctrine\\Common\\Cache\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/doctrine/cache/lib/Doctrine/Common/Cache',
         ),
         'Doctrine\\Common\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/doctrine/event-manager/src',
         ),
         'Devfactory\\Minify\\Providers\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/devfactory/minify/src/Providers',
         ),
         'Devfactory\\Minify\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/devfactory/minify/src',
         ),
         'DebugBar\\DataFormatter\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/maximebf/debugbar/src/DataFormatter/DataFormatter',
         ),
         'DebugBar\\DataCollector\\PDO\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/maximebf/debugbar/src/DataFormatter/DataCollector/PDO',
         ),
         'DebugBar\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/maximebf/debugbar/src/DebugBar',
         ),
         'Cron\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/mtdowling/cron-expression/src/Cron',
             1 => __DIR__ . '/..' . '/mtdowling/cron-expression/src/Cron',
         ),
         'Codedge\\Updater\\SourceRepositoryTypes\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/codedge/laravel-selfupdater/src/SourceRepositoryTypes',
         ),
         'Codedge\\Updater\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/codedge/laravel-selfupdater/src',
         ),
         'Chumper\\Zipper\\Repositories\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/chumper/zipper/src/Chumper/Zipper/Repositories',
         ),
         'Chumper\\Zipper\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/chumper/zipper/src/Chumper/Zipper',
             1 => __DIR__ . '/..' . '/chumper/zipper/src/Chumper/Zipper',
         ),
         'Carbon\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/nesbot/carbon/src/Carbon',
         ),
         'Barryvdh\\TranslationManager\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/barryvdh/laravel-translation-manager/src',
             1 => __DIR__ . '/..' . '/barryvdh/laravel-translation-manager/src',
         ),
         'Barryvdh\\Debugbar\\DataFormatter\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/barryvdh/laravel-debugbar/src/DataFormatter',
         ),
         'Barryvdh\\Debugbar\\DataCollector\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/barryvdh/laravel-debugbar/src/DataCollector',
         ),
         'Barryvdh\\Debugbar\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/barryvdh/laravel-debugbar/src',
         ),
         'Axn\\Laroute\\Routes\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/overrides/axn/laravel-laroute/src/Routes',
         ),
         'Axn\\Laroute\\' =>
-        array (
+        array(
             0 => __DIR__ . '/..' . '/axn/laravel-laroute/src',
         ),
         'App\\' =>
-        array (
+        array(
             0 => __DIR__ . '/../..' . '/app',
         ),
     );
 
-    public static $fallbackDirsPsr4 = array (
+    public static $fallbackDirsPsr4 = array(
         0 => __DIR__ . '/..' . '/nesbot/carbon/src',
     );
 
-    public static $prefixesPsr0 = array (
+    public static $prefixesPsr0 = array(
         'S' =>
-        array (
+        array(
             'Swift_' =>
-            array (
+            array(
                 0 => __DIR__ . '/../..' . '/overrides/swiftmailer/swiftmailer/lib/classes',
             ),
         ),
         'J' =>
-        array (
+        array(
             'JShrink' =>
-            array (
+            array(
                 0 => __DIR__ . '/..' . '/tedivm/jshrink/src',
             ),
         ),
         'H' =>
-        array (
+        array(
             'HTMLPurifier_' =>
-            array (
+            array(
                 0 => __DIR__ . '/../..' . '/overrides/ezyang/htmlpurifier/library',
             ),
             'HTMLPurifier' =>
-            array (
+            array(
                 0 => __DIR__ . '/..' . '/ezyang/htmlpurifier/library',
             ),
         ),
         'D' =>
-        array (
+        array(
             'Doctrine\\Common\\Lexer\\' =>
-            array (
+            array(
                 0 => __DIR__ . '/..' . '/doctrine/lexer/lib',
             ),
         ),
     );
 
-    public static $classMap = array (
+    public static $classMap = array(
         'App\\ActivityLog' => __DIR__ . '/../..' . '/app/ActivityLog.php',
         'App\\Attachment' => __DIR__ . '/../..' . '/app/Attachment.php',
         'App\\Broadcasting\\Broadcasters\\PolycastBroadcaster' => __DIR__ . '/../..' . '/app/Broadcasting/Broadcasters/PolycastBroadcaster.php',
@@ -4195,7 +4200,6 @@ class ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4
             $loader->fallbackDirsPsr4 = ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4::$fallbackDirsPsr4;
             $loader->prefixesPsr0 = ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4::$prefixesPsr0;
             $loader->classMap = ComposerStaticInitbf8dc242a640d7c740f283f226d0bdb4::$classMap;
-
         }, null, ClassLoader::class);
     }
 }

@@ -6,202 +6,169 @@ use App\Conversation;
 use App\Customer;
 use App\Mailbox;
 use App\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\RestApi\Entities\ApiKey;
 use Tests\TestCase;
 
 /**
- * Bug Condition Exploration Test - Bug 1: Duplicate Route Registration
- * 
- * This test explores the bug condition where API routes are registered twice:
- * once in start.php (in the web middleware group with CSRF) and once in
- * RestApiServiceProvider::boot() via loadRoutesFrom().
- * 
- * **CRITICAL**: This test MUST FAIL on unfixed code - the failure confirms the bug exists.
- * 
- * Validates: Requirements 1.1, 1.2, 1.3
+ * Regression test for Bug 1: the API routes were registered twice.
+ *
+ * FreeScout includes every module's start.php inside the "web" route group,
+ * so requiring Http/routes.php from start.php registered the api/v1 routes a
+ * second time wrapped by the CSRF middleware and made the API unusable.
+ *
+ * After the fix the routes must be registered exactly once, with the
+ * api-token and api-rate-limit middlewares only.
+ *
+ * Following the project convention the tests run against an already migrated
+ * database (see test.yml: "artisan migrate" before "./vendor/bin/phpunit").
+ * The module must be active in the "modules" table so its service provider
+ * (routes + migrations) is loaded.
  */
 class BugConditionExplorationTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected $user;
     protected $mailbox;
     protected $apiKey;
+    protected $token;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Create test data
-        $this->user = User::factory()->create();
-        $this->mailbox = Mailbox::factory()->create();
-        
-        // Create API key with mailbox access
-        $this->apiKey = \DB::table('api_keys')->insertGetId([
+        $this->user = factory(User::class)->create();
+        $this->mailbox = factory(Mailbox::class)->create();
+
+        $this->token = ApiKey::generateToken();
+
+        $this->apiKey = ApiKey::create([
             'user_id' => $this->user->id,
-            'key' => 'test-api-key-' . uniqid(),
-            'mailbox_ids' => json_encode([$this->mailbox->id]),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'name' => 'Test token',
+            'token' => $this->token,
+            'token_hash' => hash('sha256', $this->token),
+            'mailbox_ids' => [$this->mailbox->id],
+            'rate_limit' => 1000,
+            'active' => true,
         ]);
 
-        // Create test conversation
-        Conversation::factory()->create([
+        factory(Conversation::class)->create([
             'mailbox_id' => $this->mailbox->id,
-            'customer_id' => Customer::factory()->create()->id,
+            'customer_id' => factory(Customer::class)->create()->id,
+            'created_by_user_id' => $this->user->id,
         ]);
     }
 
     /**
-     * Property 1: Bug Condition - API routes respond with valid JSON
-     * 
-     * For any request to api/v1/* with a valid Bearer token,
-     * the system SHALL return a response with HTTP status in [200-429],
-     * valid JSON body, and non-empty content.
-     * 
-     * **EXPECTED OUTCOME on unfixed code**: Test FAILS (confirms bug exists)
-     * - Response may be empty
-     * - Response may have CSRF error
-     * - Response may have unexpected status code
+     * Property 1: an api/v1 request with a valid Bearer token returns a
+     * non-empty JSON response with a valid status code and no CSRF error.
      */
     public function test_api_v1_conversations_endpoint_returns_valid_json_with_bearer_token()
     {
-        // Get the API key for Bearer token
-        $apiKeyRecord = \DB::table('api_keys')->find($this->apiKey);
-        $token = $apiKeyRecord->key;
-
-        // Make request to GET /api/v1/conversations with valid Bearer token
         $response = $this->withHeaders([
-            'Authorization' => "Bearer {$token}",
+            'Authorization' => 'Bearer ' . $this->token,
             'Accept' => 'application/json',
         ])->get('/api/v1/conversations');
 
-        // ASSERTION 1: Response status should be in valid range (not CSRF error, not empty)
-        $this->assertIn(
+        $this->assertContains(
             $response->getStatusCode(),
             [200, 201, 204, 400, 401, 403, 404, 422, 429],
-            "Response status {$response->getStatusCode()} is not in expected range. " .
-            "Response body: {$response->getContent()}"
+            'Unexpected status ' . $response->getStatusCode() . ': ' . $response->getContent()
         );
 
-        // ASSERTION 2: Response should be valid JSON
-        $this->assertJson(
-            $response->getContent(),
-            "Response is not valid JSON. Response body: {$response->getContent()}"
-        );
+        $this->assertNotEmpty($response->getContent());
+        $this->assertJson($response->getContent());
 
-        // ASSERTION 3: Response should not be empty
-        $this->assertNotEmpty(
-            $response->getContent(),
-            "Response body is empty - indicates bug condition (routes registered in web context with CSRF)"
-        );
+        $response->assertStatus(200);
 
-        // ASSERTION 4: For successful requests, verify JSON structure
-        if ($response->getStatusCode() === 200) {
-            $data = $response->json();
-            $this->assertIsArray($data, "Response should be a JSON array or object");
-            $this->assertNotEmpty($data, "Response data should not be empty for successful request");
+        $body = $response->json();
+        foreach (['data', 'meta', 'links'] as $key) {
+            $this->assertArrayHasKey($key, $body);
         }
     }
 
     /**
-     * Verify that routes are registered (check via route:list)
-     * 
-     * This test verifies that the API routes exist in the routing table.
-     * If routes are registered in the web context, they may appear duplicated.
+     * Each API route must be registered exactly once.
      */
-    public function test_api_v1_routes_are_registered()
+    public function test_api_v1_routes_are_registered_exactly_once()
     {
-        // Get all registered routes
-        $routes = \Route::getRoutes();
-        
-        // Find all api/v1 routes
-        $apiRoutes = [];
-        foreach ($routes as $route) {
-            if (strpos($route->uri(), 'api/v1') === 0) {
-                $apiRoutes[] = $route->uri();
+        $counts = [];
+
+        foreach (\Route::getRoutes() as $route) {
+            if (strpos($route->uri(), 'api/v1') !== 0) {
+                continue;
             }
+
+            $key = implode('|', array_diff($route->methods(), ['HEAD'])) . ' ' . $route->uri();
+
+            $counts[$key] = ($counts[$key] ?? 0) + 1;
         }
 
-        // ASSERTION: At least some API routes should be registered
-        $this->assertNotEmpty(
-            $apiRoutes,
-            "No api/v1 routes found in routing table - routes may not be registered"
-        );
+        $this->assertNotEmpty($counts, 'No api/v1 routes are registered.');
 
-        // ASSERTION: Conversations endpoint should exist
-        $this->assertContains(
-            'api/v1/conversations',
-            $apiRoutes,
-            "api/v1/conversations route not found in routing table"
-        );
+        $duplicates = array_filter($counts, function ($count) {
+            return $count > 1;
+        });
+
+        $this->assertSame([], $duplicates, 'Duplicated API routes: ' . implode(', ', array_keys($duplicates)));
+
+        $this->assertArrayHasKey('GET api/v1/conversations', $counts);
     }
 
     /**
-     * Verify that API routes do NOT have web middleware (CSRF)
-     * 
-     * This test checks that the api/v1 routes are NOT in the web middleware group.
-     * If they are, the CSRF middleware will interfere with API requests.
+     * API routes must not be wrapped by the web (CSRF) middleware group.
      */
     public function test_api_v1_routes_do_not_have_web_middleware()
     {
-        $routes = \Route::getRoutes();
-        
-        foreach ($routes as $route) {
-            if (strpos($route->uri(), 'api/v1') === 0) {
-                $middleware = $route->middleware();
-                
-                // ASSERTION: API routes should NOT have 'web' middleware
-                $this->assertNotContains(
-                    'web',
-                    $middleware,
-                    "Route {$route->uri()} has 'web' middleware - this causes CSRF interference with API requests"
-                );
-                
-                // ASSERTION: API routes should NOT have 'csrf' middleware
-                $this->assertNotContains(
-                    'csrf',
-                    $middleware,
-                    "Route {$route->uri()} has 'csrf' middleware - this blocks API requests without CSRF token"
-                );
+        foreach (\Route::getRoutes() as $route) {
+            if (strpos($route->uri(), 'api/v1') !== 0) {
+                continue;
             }
+
+            $middleware = $route->middleware();
+
+            $this->assertNotContains('web', $middleware, $route->uri() . ' has the web middleware.');
+            $this->assertNotContains('csrf', $middleware, $route->uri() . ' has the csrf middleware.');
         }
     }
 
     /**
-     * Verify that API routes have correct middleware
-     * 
-     * API routes should have api-token and api-rate-limit middleware,
-     * but NOT web or csrf middleware.
+     * API routes must carry the API middlewares.
      */
     public function test_api_v1_routes_have_correct_middleware()
     {
-        $routes = \Route::getRoutes();
-        $foundApiRoute = false;
-        
-        foreach ($routes as $route) {
-            if ($route->uri() === 'api/v1/conversations' && $route->methods()[0] === 'GET') {
-                $foundApiRoute = true;
-                $middleware = $route->middleware();
-                
-                // ASSERTION: Should have api-token middleware
-                $this->assertContains(
-                    'api-token',
-                    $middleware,
-                    "Route api/v1/conversations should have 'api-token' middleware"
-                );
-                
-                // ASSERTION: Should have api-rate-limit middleware
-                $this->assertContains(
-                    'api-rate-limit',
-                    $middleware,
-                    "Route api/v1/conversations should have 'api-rate-limit' middleware"
-                );
-                
-                break;
+        foreach (\Route::getRoutes() as $route) {
+            if (strpos($route->uri(), 'api/v1') !== 0) {
+                continue;
             }
+
+            $middleware = $route->middleware();
+
+            $this->assertContains('api-token', $middleware, $route->uri() . ' is missing api-token.');
+            $this->assertContains('api-rate-limit', $middleware, $route->uri() . ' is missing api-rate-limit.');
         }
-        
-        $this->assertTrue($foundApiRoute, "Could not find GET api/v1/conversations route");
+    }
+
+    /**
+     * The token management screen must stay behind the web stack and
+     * requires an administrator.
+     */
+    public function test_token_management_routes_are_protected()
+    {
+        $found = 0;
+
+        foreach (\Route::getRoutes() as $route) {
+            if (strpos($route->uri(), 'restapi/tokens') !== 0) {
+                continue;
+            }
+
+            $found++;
+
+            $middleware = $route->middleware();
+
+            $this->assertContains('web', $middleware);
+            $this->assertContains('auth', $middleware);
+            $this->assertContains('roles', $middleware);
+        }
+
+        $this->assertGreaterThan(0, $found, 'No restapi/tokens routes are registered.');
     }
 }

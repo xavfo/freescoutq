@@ -3,37 +3,45 @@
 namespace Modules\RestApi\Http\Controllers;
 
 use App\Customer;
+use App\Email;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\RestApi\Entities\DTOs\CustomerDTO;
 use Modules\RestApi\Http\Requests\StoreCustomerRequest;
+use Modules\RestApi\Support\LogsApiAudit;
 
 class CustomersController extends Controller
 {
+    use LogsApiAudit;
+
     /**
      * List customers
      * GET /api/v1/customers
      */
     public function index(Request $request): JsonResponse
     {
-        $userId = $request->attributes->get('user_id');
-
         $query = Customer::query();
 
-        // Apply search filter
+        // Apply search filter. Customer emails live in the "emails"
+        // relation, there is no "emails" column on the customers table.
+        //
+        // A subquery is used instead of orWhereHas(): FreeScout overrides
+        // Illuminate\Database\Query\Builder and its addWhereExistsQuery()
+        // references an undefined $operator, so every whereHas()/whereExists()
+        // throws "compact(): Undefined variable $operator".
         if ($request->has('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('emails', 'like', "%{$search}%");
+                    ->orWhereIn('id', Email::query()->select('customer_id')->where('email', 'like', "%{$search}%"));
             });
         }
 
         // Sort
         $sort = $request->input('sort', '-created_at');
-        $direction = str_starts_with($sort, '-') ? 'desc' : 'asc';
+        $direction = strncmp($sort, '-', 1) === 0 ? 'desc' : 'asc';
         $sortField = ltrim($sort, '-');
         $query->orderBy($sortField, $direction);
 
@@ -96,9 +104,10 @@ class CustomersController extends Controller
     public function store(StoreCustomerRequest $request): JsonResponse
     {
         try {
-            // Check if customer already exists with this email
-            $email = $request->input('emails')[0];
-            $existing = Customer::where('emails', 'like', "%{$email}%")->first();
+            $emails = $request->input('emails');
+
+            // Emails are stored in the "emails" table, look the customer up there.
+            $existing = Customer::getByEmail($emails[0]);
 
             if ($existing) {
                 return response()->json([
@@ -107,39 +116,31 @@ class CustomersController extends Controller
                 ], 409);
             }
 
-            $customer = Customer::create([
+            // Customer::create() saves the customer and links every email address.
+            $customer = Customer::create($emails[0], [
                 'first_name' => $request->input('first_name'),
                 'last_name' => $request->input('last_name', ''),
-                'emails' => json_encode($request->input('emails')),
-                'phone' => $request->input('phone', ''),
+                'emails' => $emails,
+                'phone' => $request->input('phone'),
             ]);
 
-            $this->logAudit($request, 'created', $customer->id);
+            if (!$customer) {
+                return response()->json([
+                    'message' => 'Unable to create the customer',
+                    'status_code' => 422,
+                ], 422);
+            }
+
+            $this->logAudit($request, 'created', $customer->id, 201);
 
             return response()->json(CustomerDTO::fromModel($customer)->toArray(), 201);
         } catch (\Exception $e) {
+            \Log::error('RestApi: error creating customer: ' . $e->getMessage());
+
             return response()->json([
                 'message' => 'Error creating customer: ' . $e->getMessage(),
                 'status_code' => 500,
             ], 500);
-        }
-    }
-
-    private function logAudit(Request $request, $action, $customerId)
-    {
-        try {
-            $apiKeyId = $request->attributes->get('api_key_id');
-
-            \Illuminate\Support\Facades\DB::table('api_audit_logs')
-                ->where('api_key_id', $apiKeyId)
-                ->latest('id')
-                ->first()
-                ->update([
-                    'response_code' => 200,
-                    'response_message' => "Customer {$customerId} {$action}",
-                ]);
-        } catch (\Exception $e) {
-            // Silently fail
         }
     }
 }

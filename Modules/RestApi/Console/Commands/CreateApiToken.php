@@ -4,6 +4,7 @@ namespace Modules\RestApi\Console\Commands;
 
 use Illuminate\Console\Command;
 use Modules\RestApi\Entities\ApiKey;
+use Modules\RestApi\Support\MailboxAccess;
 
 class CreateApiToken extends Command
 {
@@ -31,11 +32,9 @@ class CreateApiToken extends Command
             return 1;
         }
 
-        // Parse mailbox IDs
-        $mailboxIdsList = null;
-        if ($mailboxIds) {
-            $mailboxIdsList = array_map('trim', explode(',', $mailboxIds));
-        }
+        // Parse mailbox IDs. normalize() returns null (every mailbox) or
+        // an array of integers, which is what the ApiKey json cast expects.
+        $mailboxIdsList = MailboxAccess::normalize($mailboxIds);
 
         // Generate token
         $token = ApiKey::generateToken();
@@ -47,7 +46,7 @@ class CreateApiToken extends Command
             'name' => $name,
             'token' => $token,
             'token_hash' => $tokenHash,
-            'mailbox_ids' => $mailboxIdsList ? json_encode($mailboxIdsList) : null,
+            'mailbox_ids' => $mailboxIdsList,
             'rate_limit' => $rateLimit,
             'active' => true,
             'expires_at' => $expires ? \Carbon\Carbon::parse($expires) : null,

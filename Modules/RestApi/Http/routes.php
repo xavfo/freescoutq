@@ -29,10 +29,13 @@ Route::group([
 });
 
 // API Token Management Routes (Web Interface)
+// Only administrators can manage API tokens, so the "web" middleware group is
+// combined with the FreeScout authentication and role middlewares.
 Route::group([
     'prefix' => 'restapi/tokens',
     'namespace' => 'Modules\RestApi\Http\Controllers',
-    'middleware' => ['web'],
+    'middleware' => ['web', 'auth', 'roles'],
+    'roles' => ['admin'],
 ], function () {
     Route::get('/', 'ApiTokenController@index')->name('restapi.api-tokens.index');
     Route::post('/', 'ApiTokenController@store')->name('restapi.api-tokens.store');

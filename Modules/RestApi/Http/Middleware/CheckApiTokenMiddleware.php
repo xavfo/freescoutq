@@ -4,8 +4,8 @@ namespace Modules\RestApi\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Modules\RestApi\Support\MailboxAccess;
 
 class CheckApiTokenMiddleware
 {
@@ -19,21 +19,27 @@ class CheckApiTokenMiddleware
         }
 
         $token = $matches[1];
+        $tokenHash = hash('sha256', $token);
 
         // Find API key in database
         $apiKey = DB::table('api_keys')
             ->where('active', true)
             ->get()
-            ->first(function ($key) use ($token) {
-                return hash_equals($key->token_hash, hash('sha256', $token));
+            ->first(function ($key) use ($tokenHash) {
+                return is_string($key->token_hash) && hash_equals($key->token_hash, $tokenHash);
             });
 
         if (!$apiKey) {
             return $this->errorResponse('Invalid API token', 401);
         }
 
-        // Check expiration
-        if ($apiKey->expires_at && now()->isAfter($apiKey->expires_at)) {
+        // Check expiration.
+        //
+        // gt() is used instead of isAfter(): the Carbon version bundled with
+        // this FreeScout release does not implement isAfter(), and calling it
+        // raised "Method isAfter does not exist" (HTTP 500) whenever an
+        // expired token was used, instead of the expected 401.
+        if ($apiKey->expires_at && now()->gt($apiKey->expires_at)) {
             return $this->errorResponse('API token has expired', 401);
         }
 
@@ -42,17 +48,18 @@ class CheckApiTokenMiddleware
             ->where('id', $apiKey->id)
             ->update(['last_used_at' => now()]);
 
-        // Store in request for later use
+        // Store in request for later use.
+        //
+        // mailbox_ids is normalized into either null (access to every mailbox)
+        // or an array of integers. Handlers must never receive the raw database
+        // value, otherwise authorization checks break (see MailboxAccess).
         $request->attributes->set('api_key_id', $apiKey->id);
         $request->attributes->set('user_id', $apiKey->user_id);
-        $request->attributes->set(
-            'mailbox_ids',
-            $apiKey->mailbox_ids ? json_decode($apiKey->mailbox_ids, true) : null
-        );
+        $request->attributes->set('mailbox_ids', MailboxAccess::normalize($apiKey->mailbox_ids));
 
         // Log the API call
         try {
-            DB::table('api_audit_logs')->insert([
+            $auditLogId = DB::table('api_audit_logs')->insertGetId([
                 'user_id' => $apiKey->user_id,
                 'api_key_id' => $apiKey->id,
                 'method' => $request->getMethod(),
@@ -62,6 +69,10 @@ class CheckApiTokenMiddleware
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            // Handlers update this exact row instead of guessing "the latest
+            // log of this API key", which used to overwrite concurrent requests.
+            $request->attributes->set('api_audit_log_id', $auditLogId);
         } catch (\Exception $e) {
             // Silently fail logging
         }

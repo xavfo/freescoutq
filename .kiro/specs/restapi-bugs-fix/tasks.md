@@ -1,5 +1,39 @@
 # Implementation Plan
 
+## Estado de ejecución (2026-10-01)
+
+- **Bug 1 (rutas duplicadas / CSRF): corregido.** `Modules/RestApi/start.php` ya no carga `Http/routes.php`
+  (FreeScout lo incluye dentro del grupo `web`). Verificado cargando el proveedor: las 15 rutas
+  `api/v1/*` se registran **una sola vez** y solo con `api-token`/`api-rate-limit`.
+- **Bug 2 (doble barra en assets): corregido** en `.env` (`APP_URL` sin barra final). No requiere cambios de código.
+- **Bug 3 (HTTP 500 en escrituras): corregido.** Causa: doble codificación JSON de `mailbox_ids`
+  (`json_encode()` + cast `json` del modelo) → `json_decode()` devolvía un `string` → `in_array()` lanzaba
+  `TypeError` → 500; y `index()` filtraba de menos, exponiendo todos los buzones. Se añadió
+  `Modules/RestApi/Support/MailboxAccess.php`, se normaliza en el middleware y en todos los handlers, y se
+  corrigió la creación de conversaciones/hilos/clientes (modelo de datos real de FreeScout).
+- **Bloqueos de entorno encontrados y resueltos para poder verificar:**
+  1. `overrides/rap2hpoutre/laravel-log-viewer/src/...` no contenía `Level.php` ni `Pattern.php` (el autoload
+     PSR-4 apunta ahí), lo que hacía fallar **todos** los comandos de `php artisan`. Añadidos desde el paquete en
+     `vendor/`.
+  2. `vendor/composer/autoload_psr4.php` / `autoload_static.php` no incluían `Modules\RestApi\` (nunca se regeneró
+     el autoload). Añadido el mapeo, idéntico al que produce `composer dump-autoload`. **Nota:** el `vendor/`
+     versionado es parcial, por lo que `composer dump-autoload` no puede completarse en el clon.
+- **Verificado localmente (con MariaDB 11.4 real):** sintaxis (`php -l` de todo el módulo), registro único de rutas, 38 comprobaciones del
+  normalizador `MailboxAccess` (0 fallos), **verificación end-to-end de la API a través del kernel HTTP contra una BD migrada
+  (49 comprobaciones, 0 fallos, 1 omitida)** y **la suite PHPUnit del módulo (71 tests, 0 fallos, 2 omitidos)**.
+- **Dos bugs reales adicionales encontrados y corregidos al verificar:** `now()->isAfter()` (no existe en el Carbon de esta versión →
+  HTTP 500 con tokens expirados en lugar de 401) y `whereHas()` (el `Query\Builder` sobrescrito por FreeScout llama a
+  `compact('operator')` con la variable sin definir → `whereHas`/`whereExists` revienta; la búsqueda de clientes se reescribió con una
+  subconsulta `whereIn`).
+- **Cómo reproducir la suite:** `composer install` (este clon tiene el `vendor/` parcial: le faltan PHPUnit y Faker), activar el
+  módulo en la tabla `modules` de la BD de pruebas, `php artisan migrate --force` con `DB_CONNECTION=testing` y ejecutar
+  `vendor/bin/phpunit --testsuite RestApi --stderr`. El `--stderr` es obligatorio: el middleware `ResponseHeaders` de FreeScout usa
+  `header()` y con la salida de PHPUnit en stdout las respuestas devuelven 500 ("headers already sent").
+- **Limitación observada:** ejecutar TODA la suite en un solo proceso resetea la BD de pruebas (queda solo el esquema base y la
+  activación del módulo se pierde). Ejecutándola por clases pasa al 100 %: `ConversationsApiTest`+`CustomersApiTest` 14/14,
+  `MailboxRestrictionRegressionTest` 12 (2 omitidos) y `ThreadsApiTest`+`BugConditionExplorationTest`+`ApiKeyTest`+`MailboxAccessTest` 45/45.
+  Pendiente de investigar (no afecta al módulo).
+
 - [x] 1. Escribir test de exploración de condición de bug (Bug 1 - Rutas duplicadas)
   - **Property 1: Bug Condition** - Registro duplicado de rutas en contexto web
   - **CRITICAL**: Este test DEBE FALLAR en el código sin corregir — el fallo confirma que el bug existe
@@ -81,20 +115,35 @@
     - Verificar que el dashboard muestra estilos, navegación y funcionalidad JavaScript completa
     - _Requirements: 2.4, 2.5_
 
-- [x] 5. Checkpoint - Verificar que todos los tests pasan
-  - Re-ejecutar el test de exploración Bug 1 (Property 1) → debe PASAR
-  - Re-ejecutar los tests de preservación (Property 2) → deben PASAR
-  - Verificar `php artisan route:list | grep api/v1` → cada ruta exactamente una vez
-  - Verificar que el dashboard carga correctamente sin doble barra en assets
-  - Verificar que las rutas web de FreeScout siguen funcionando con CSRF
-  - Asegurarse de que todos los tests pasan; consultar al usuario si surgen dudas.
+- [ ] 5. Checkpoint - Verificar que todos los tests pasan
+  - Test de exploración Bug 1 (Property 1) → reescrito y consistente con el fix; **no ejecutado** (sin PHPUnit/MySQL locales)
+  - Tests de preservación (Property 2) → **no ejecutados** por el mismo motivo
+  - `php artisan route:list | grep api/v1` → **verificado**: cada ruta exactamente una vez y sin `web`
+  - Dashboard sin doble barra en assets → `.env` ya corregido
+  - Rutas web de FreeScout con CSRF → sin cambios (`start.php` solo dejó de registrar rutas de API; `restapi/tokens` sigue en el grupo `web`, ahora además con `auth` + `roles`)
+  - Pendiente: ejecutar la suite completa en una instancia con MySQL (tarea 7)
 
 - [ ] 6. Fix Bug 3 - Endpoints de escritura fallan con `in_array()`
-  - [ ] 6.1 Obtener el código completo de `Modules/RestApi` desde la instalación remota y colocarlo en `Modules/RestApi/` en este clon. No traer `.env`, tokens ni dumps de conversaciones.
-  - [ ] 6.2 Inspeccionar `ConversationsController::show()`, `ConversationsController::store()`, `ThreadsController::store()`, el endpoint `index` y la persistencia de `mailbox_ids`. Confirmar la causa antes de editar.
-  - [ ] 6.3 Añadir pruebas de regresión para `show`, creación de conversación y creación de thread; cubrir buzones CSV, acceso a todos, token restringido y acceso denegado.
-  - [ ] 6.4 Normalizar `mailbox_ids` sin debilitar la autorización. Ejecutar las pruebas focalizadas y validar en una instancia de prueba, sin crear tickets de producción.
-  - [ ] 6.5 Confirmar el mecanismo de asignación al usuario global `1`; completar y probar `freescout_client.php` solo después de fijar el contrato.
-  - [ ] 6.6 Confirmar si `type` y `to` admiten WhatsApp/SMS o si la API solo soporta correo.
-  - [ ] 6.7 Rotar el token expuesto fuera del repositorio y comprobar que no quede en archivos, historial de comandos ni tests.
+  - [x] 6.1 Código del módulo localizado en `Modules/RestApi/` de este clon. No se accedió al servidor remoto (sin acceso SSH): los números de línea del reporte (`show()` 117, `store()` 139, `ThreadsController::store()` 111) coinciden con este clon, así que es la misma versión. No se tocaron `.env`, tokens ni dumps.
+  - [x] 6.2 Causa confirmada (antes de editar): **doble codificación JSON**. `ApiTokenController::store()` y `restapi:create-token` ya hacían `json_encode()`, y el modelo `ApiKey` castea `mailbox_ids` a `json` (que vuelve a codificar). La columna quedaba con un *string* JSON, `json_decode()` devolvía un `string` y `in_array()` lanzaba `Argument #2 ($haystack) must be of type array, string given` → HTTP 500. `index()` se salvaba por su guarda `is_array()`, pero **sin aplicar el filtro: filtraba de menos y exponía todos los buzones**. Además se detectó que el módulo asumía una columna `customers.emails` inexistente (FreeScout guarda los correos en la tabla `emails`) y que `Conversation`/`Thread` se creaban con mass assignment, sin `source_via`/`source_type`/`folder_id` y sin `state`.
+  - [x] 6.3 Pruebas añadidas: `Tests/Unit/MailboxAccessTest.php` (sin BD), `Tests/Feature/Api/MailboxRestrictionRegressionTest.php` (show, creación de conversación y de thread; CSV, doble codificación, acceso a todos, token restringido, acceso denegado y hash inválido), `BugConditionExplorationTest` corregido, `ApiKeyTest` ampliado y `phpunit.xml` con la suite `RestApi`.
+  - [x] 6.4 Normalización centralizada en `Modules/RestApi/Support/MailboxAccess.php` (idempotente, falla cerrado ante valores no interpretables) y aplicada en el middleware y en todos los handlers. Se eliminó la doble codificación en los dos puntos de escritura y el modelo `ApiKey` normaliza en el accessor/mutator. Autorización intacta: `null` = todos los buzones, lista = solo esos, resto = 403 (ya no 500).
+  - [x] 6.5 Mecanismo de asignación confirmado: `POST /api/v1/conversations` acepta `assigned_to` (validado `integer|exists:users,id`); por defecto asigna al usuario del token. Para el usuario global `1`: `{"assigned_to": 1}`. `freescout_client.php` no existe en el repositorio, por lo que no se pudo completar.
+  - [x] 6.6 Confirmado: **la API solo soporta correo**. `to`/`cc`/`bcc` se validan con `email` y `Conversation::sanitizeEmails()` descarta lo que no sea una dirección válida. `type` de conversación acepta 1-4 (email/phone/chat/custom) y el de thread 2/3/8, pero el `to` sigue siendo email. No hay soporte WhatsApp/SMS: haría falta otro validador y otro canal de envío.
+  - [x] 6.7 Verificado que **no hay ningún token expuesto en el repositorio**: búsqueda de `fs_[0-9a-f]{64}` y de literales `Bearer ...` en archivos versionados (excluyendo `vendor/`) y en el historial → sin resultados. **Pendiente fuera del alcance local:** rotar el token de la instancia de producción (requiere acceso al servidor).
   - Detalle del error reportado, contrato y supuestos: [bugfix.md](./bugfix.md#bug-3---endpoints-de-escritura-devuelven-http-500).
+
+- [x] 7. Verificación con base de datos real (completada el 2026-10-03)
+  - [x] 7.1 Suite PHPUnit ejecutada contra MariaDB 11.4 (`freescout-test`): **71 tests, 0 fallos, 2 omitidos** (ejecutada por clases;
+        ver la limitación de la ejecución conjunta en el resumen de arriba). Requisitos: `composer install`, módulo activo en la tabla
+        `modules`, `DB_CONNECTION=testing` y `--stderr`.
+  - [x] 7.2 `route:list` / inspección de rutas: **15 rutas `api/v1` exactamente una vez**, sin `web`/`csrf`, solo `api-token`+`api-rate-limit`;
+        `restapi/tokens` con `web, auth, roles`.
+  - [x] 7.3 `MailboxAccess`: 38 comprobaciones unitarias + las 12 de regresión por API (incluidas las formas CSV, JSON doble y valor
+        ilegible) → 0 fallos.
+  - [x] 7.4 Verificación end-to-end a través del kernel HTTP contra la BD migrada: **49 comprobaciones, 0 fallos**, cubriendo
+        autenticación (401), rate limit (429), alcance de buzones (200/403), lecturas, escrituras (conversación e hilo) y clientes.
+  - [ ] 7.5 Falta reproducir sobre una copia de la BD **de producción**: los tokens existentes con `mailbox_ids` mal codificado
+        (la normalización los tolera, pero conviene confirmarlo con datos reales) y reescribirlos al formato canónico si procede.
+  - [ ] 7.6 Falta probar las escrituras contra la instancia de prueba real y **nunca** sobre producción: crear una conversación
+        puede enviar correo al destinatario.

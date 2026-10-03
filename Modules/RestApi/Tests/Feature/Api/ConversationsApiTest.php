@@ -20,16 +20,15 @@ class ConversationsApiTest extends TestCase
         parent::setUp();
 
         // Create test user
-        $this->user = User::factory()->create();
+        $this->user = factory(User::class)->create();
 
         // Create test mailbox
-        $this->mailbox = Mailbox::factory()->create();
+        $this->mailbox = factory(Mailbox::class)->create();
 
         // Create test customer
-        $this->customer = Customer::create([
+        $this->customer = Customer::create('test@example.com', [
             'first_name' => 'Test',
             'last_name' => 'Customer',
-            'emails' => json_encode(['test@example.com']),
         ]);
 
         // Create API token
@@ -59,7 +58,11 @@ class ConversationsApiTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        $response->assertJsonStructure(['data', 'meta', 'links']);
+
+        $body = $response->json();
+        foreach (['data', 'meta', 'links'] as $key) {
+            $this->assertArrayHasKey($key, $body);
+        }
     }
 
     public function test_create_conversation()
@@ -75,7 +78,11 @@ class ConversationsApiTest extends TestCase
         ]);
 
         $response->assertStatus(201);
-        $response->assertJsonStructure(['id', 'mailbox_id', 'subject', 'status']);
+
+        $body = $response->json();
+        foreach (['id', 'mailbox_id', 'subject', 'status'] as $key) {
+            $this->assertArrayHasKey($key, $body);
+        }
     }
 
     public function test_create_conversation_validation()
@@ -92,7 +99,7 @@ class ConversationsApiTest extends TestCase
 
     public function test_get_single_conversation()
     {
-        $conversation = \App\Conversation::factory()->create([
+        $conversation = factory(\App\Conversation::class)->create([
             'mailbox_id' => $this->mailbox->id,
             'customer_id' => $this->customer->id,
         ]);
@@ -102,12 +109,12 @@ class ConversationsApiTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        $response->assertJson(['id' => $conversation->id]);
+        $this->assertSame((int) $conversation->id, (int) $response->json()['id']);
     }
 
     public function test_update_conversation_status()
     {
-        $conversation = \App\Conversation::factory()->create([
+        $conversation = factory(\App\Conversation::class)->create([
             'mailbox_id' => $this->mailbox->id,
             'customer_id' => $this->customer->id,
             'status' => 1,
@@ -120,12 +127,12 @@ class ConversationsApiTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        $response->assertJson(['status' => 3]);
+        $this->assertSame(3, (int) $response->json()['status']);
     }
 
     public function test_delete_conversation()
     {
-        $conversation = \App\Conversation::factory()->create([
+        $conversation = factory(\App\Conversation::class)->create([
             'mailbox_id' => $this->mailbox->id,
         ]);
 
@@ -138,8 +145,8 @@ class ConversationsApiTest extends TestCase
 
     public function test_unauthorized_mailbox_access()
     {
-        $otherMailbox = Mailbox::factory()->create();
-        $conversation = \App\Conversation::factory()->create([
+        $otherMailbox = factory(Mailbox::class)->create();
+        $conversation = factory(\App\Conversation::class)->create([
             'mailbox_id' => $otherMailbox->id,
         ]);
 

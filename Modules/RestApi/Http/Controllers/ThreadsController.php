@@ -3,23 +3,27 @@
 namespace Modules\RestApi\Http\Controllers;
 
 use App\Conversation;
+use App\Mailbox;
 use App\Thread;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\RestApi\Entities\DTOs\ThreadDTO;
 use Modules\RestApi\Http\Requests\StoreThreadRequest;
+use Modules\RestApi\Support\LogsApiAudit;
+use Modules\RestApi\Support\MailboxAccess;
 
 class ThreadsController extends Controller
 {
+    use LogsApiAudit;
+
     /**
      * Get threads for a conversation
      * GET /api/v1/conversations/:id/threads
      */
     public function index(Request $request, $conversationId): JsonResponse
     {
-        $userId = $request->attributes->get('user_id');
-        $mailboxIds = $request->attributes->get('mailbox_ids');
+        $scope = $request->attributes->get('mailbox_ids');
 
         $conversation = Conversation::find($conversationId);
 
@@ -31,7 +35,7 @@ class ThreadsController extends Controller
         }
 
         // Check authorization
-        if (!in_array($conversation->mailbox_id, $mailboxIds ?? [])) {
+        if (!MailboxAccess::allows($scope, $conversation->mailbox_id)) {
             return response()->json([
                 'message' => 'Unauthorized to access this conversation',
                 'status_code' => 403,
@@ -66,8 +70,7 @@ class ThreadsController extends Controller
      */
     public function show(Request $request, $id): JsonResponse
     {
-        $userId = $request->attributes->get('user_id');
-        $mailboxIds = $request->attributes->get('mailbox_ids');
+        $scope = $request->attributes->get('mailbox_ids');
 
         $thread = Thread::with('conversation')->find($id);
 
@@ -79,7 +82,7 @@ class ThreadsController extends Controller
         }
 
         // Check authorization
-        if (!in_array($thread->conversation->mailbox_id, $mailboxIds ?? [])) {
+        if (!MailboxAccess::allows($scope, optional($thread->conversation)->mailbox_id)) {
             return response()->json([
                 'message' => 'Unauthorized to access this thread',
                 'status_code' => 403,
@@ -96,7 +99,7 @@ class ThreadsController extends Controller
     public function store(StoreThreadRequest $request, $conversationId): JsonResponse
     {
         $userId = $request->attributes->get('user_id');
-        $mailboxIds = $request->attributes->get('mailbox_ids');
+        $scope = $request->attributes->get('mailbox_ids');
 
         $conversation = Conversation::find($conversationId);
 
@@ -108,7 +111,7 @@ class ThreadsController extends Controller
         }
 
         // Check authorization
-        if (!in_array($conversation->mailbox_id, $mailboxIds ?? [])) {
+        if (!MailboxAccess::allows($scope, $conversation->mailbox_id)) {
             return response()->json([
                 'message' => 'Unauthorized to add thread to this conversation',
                 'status_code' => 403,
@@ -116,26 +119,33 @@ class ThreadsController extends Controller
         }
 
         try {
-            $mailbox = \App\Mailbox::find($conversation->mailbox_id);
+            $mailbox = Mailbox::find($conversation->mailbox_id);
+            $customer = $conversation->customer;
 
-            $thread = Thread::create([
-                'conversation_id' => $conversationId,
-                'user_id' => $userId,
-                'type' => $request->input('type', 2), // Message by default
-                'body' => $request->input('body'),
-                'from' => $mailbox->from_name . ' <' . $mailbox->from_email . '>',
-                'to' => $conversation->customer ? $conversation->customer->getMainEmail() : '',
-                'cc' => implode(',', $request->input('cc', [])),
-                'bcc' => implode(',', $request->input('bcc', [])),
-            ]);
+            // Thread is guarded, so it must be built through Thread::create().
+            $thread = Thread::create(
+                $conversation,
+                (int) $request->input('type', Thread::TYPE_MESSAGE),
+                $request->input('body'),
+                [
+                    'user_id' => $userId ? (int) $userId : $conversation->user_id,
+                    'created_by_user_id' => $userId ? (int) $userId : null,
+                    'customer_id' => $customer ? $customer->id : null,
+                    'source_via' => Thread::PERSON_USER,
+                    'source_type' => Thread::SOURCE_TYPE_API,
+                    'from' => $mailbox ? $mailbox->name . ' <' . $mailbox->email . '>' : '',
+                    'to' => $customer ? $customer->getMainEmail() : '',
+                    'cc' => Conversation::sanitizeEmails($request->input('cc', [])),
+                    'bcc' => Conversation::sanitizeEmails($request->input('bcc', [])),
+                ]
+            );
 
-            // Update conversation updated_at
-            $conversation->touch();
-
-            $this->logAudit($request, 'thread_created', $thread->id);
+            $this->logAudit($request, 'thread_created', $thread->id, 201);
 
             return response()->json(ThreadDTO::fromModel($thread)->toArray(), 201);
         } catch (\Exception $e) {
+            \Log::error('RestApi: error creating thread: ' . $e->getMessage());
+
             return response()->json([
                 'message' => 'Error creating thread: ' . $e->getMessage(),
                 'status_code' => 500,
@@ -150,7 +160,7 @@ class ThreadsController extends Controller
     public function update(Request $request, $id): JsonResponse
     {
         $userId = $request->attributes->get('user_id');
-        $mailboxIds = $request->attributes->get('mailbox_ids');
+        $scope = $request->attributes->get('mailbox_ids');
 
         $thread = Thread::with('conversation')->find($id);
 
@@ -162,7 +172,7 @@ class ThreadsController extends Controller
         }
 
         // Check authorization
-        if (!in_array($thread->conversation->mailbox_id, $mailboxIds ?? [])) {
+        if (!MailboxAccess::allows($scope, optional($thread->conversation)->mailbox_id)) {
             return response()->json([
                 'message' => 'Unauthorized to update this thread',
                 'status_code' => 403,
@@ -170,7 +180,7 @@ class ThreadsController extends Controller
         }
 
         // Can only edit if user is the creator
-        if ($thread->user_id !== $userId) {
+        if ((int) $thread->user_id !== (int) $userId) {
             return response()->json([
                 'message' => 'You can only edit your own threads',
                 'status_code' => 403,
@@ -201,8 +211,7 @@ class ThreadsController extends Controller
      */
     public function destroy(Request $request, $id): JsonResponse
     {
-        $userId = $request->attributes->get('user_id');
-        $mailboxIds = $request->attributes->get('mailbox_ids');
+        $scope = $request->attributes->get('mailbox_ids');
 
         $thread = Thread::with('conversation')->find($id);
 
@@ -214,7 +223,7 @@ class ThreadsController extends Controller
         }
 
         // Check authorization
-        if (!in_array($thread->conversation->mailbox_id, $mailboxIds ?? [])) {
+        if (!MailboxAccess::allows($scope, optional($thread->conversation)->mailbox_id)) {
             return response()->json([
                 'message' => 'Unauthorized to delete this thread',
                 'status_code' => 403,
@@ -224,7 +233,7 @@ class ThreadsController extends Controller
         try {
             $thread->delete();
 
-            $this->logAudit($request, 'thread_deleted', $thread->id);
+            $this->logAudit($request, 'thread_deleted', $thread->id, 204);
 
             return response()->json(null, 204);
         } catch (\Exception $e) {
@@ -232,24 +241,6 @@ class ThreadsController extends Controller
                 'message' => 'Error deleting thread: ' . $e->getMessage(),
                 'status_code' => 500,
             ], 500);
-        }
-    }
-
-    private function logAudit(Request $request, $action, $threadId)
-    {
-        try {
-            $apiKeyId = $request->attributes->get('api_key_id');
-
-            \Illuminate\Support\Facades\DB::table('api_audit_logs')
-                ->where('api_key_id', $apiKeyId)
-                ->latest('id')
-                ->first()
-                ->update([
-                    'response_code' => 200,
-                    'response_message' => "Thread {$threadId} {$action}",
-                ]);
-        } catch (\Exception $e) {
-            // Silently fail
         }
     }
 }

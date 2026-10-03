@@ -16,7 +16,7 @@ class CustomersApiTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::factory()->create();
+        $this->user = factory(User::class)->create();
 
         $token = ApiKey::generateToken();
         ApiKey::create([
@@ -32,22 +32,25 @@ class CustomersApiTest extends TestCase
 
     public function test_list_customers()
     {
-        Customer::factory()->count(5)->create();
+        factory(Customer::class, 5)->create();
 
         $response = $this->getJson('/api/v1/customers', [
             'Authorization' => 'Bearer ' . $this->token,
         ]);
 
         $response->assertStatus(200);
-        $response->assertJsonStructure(['data', 'meta']);
+
+        $body = $response->json();
+        foreach (['data', 'meta'] as $key) {
+            $this->assertArrayHasKey($key, $body);
+        }
     }
 
     public function test_search_customers()
     {
-        Customer::create([
+        $customer = Customer::create('john@example.com', [
             'first_name' => 'John',
             'last_name' => 'Doe',
-            'emails' => json_encode(['john@example.com']),
         ]);
 
         $response = $this->getJson('/api/v1/customers?search=john', [
@@ -55,22 +58,36 @@ class CustomersApiTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        $response->assertJsonCount(1, 'data');
+        // Search must work by name and by email (emails live in their own table).
+        $this->assertContains((int) $customer->id, array_map('intval', array_column($response->json()['data'], 'id')));
+
+        $response = $this->getJson('/api/v1/customers?search=john@example.com', [
+            'Authorization' => 'Bearer ' . $this->token,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertContains((int) $customer->id, array_map('intval', array_column($response->json()['data'], 'id')));
     }
 
     public function test_create_customer()
     {
+        // Unique per run: the database is not refreshed between runs.
+        $email = 'jane+' . uniqid() . '@example.com';
+
         $response = $this->postJson('/api/v1/customers', [
             'first_name' => 'Jane',
             'last_name' => 'Smith',
-            'emails' => ['jane@example.com'],
+            'emails' => [$email],
             'phone' => '+1234567890',
         ], [
             'Authorization' => 'Bearer ' . $this->token,
         ]);
 
         $response->assertStatus(201);
-        $response->assertJson(['first_name' => 'Jane']);
+        $this->assertSame('Jane', $response->json()['first_name']);
+
+        $customer = Customer::getByEmail($email);
+        $this->assertNotNull($customer, 'El cliente debería haberse creado con su email.');
     }
 
     public function test_create_customer_validation()
@@ -86,10 +103,9 @@ class CustomersApiTest extends TestCase
 
     public function test_get_customer()
     {
-        $customer = Customer::create([
+        $customer = Customer::create('test@example.com', [
             'first_name' => 'Test',
             'last_name' => 'Customer',
-            'emails' => json_encode(['test@example.com']),
         ]);
 
         $response = $this->getJson('/api/v1/customers/' . $customer->id, [
@@ -97,7 +113,7 @@ class CustomersApiTest extends TestCase
         ]);
 
         $response->assertStatus(200);
-        $response->assertJson(['id' => $customer->id]);
-        $response->assertJsonStructure(['recent_conversations']);
+        $this->assertSame((int) $customer->id, (int) $response->json()['id']);
+        $this->assertArrayHasKey('recent_conversations', $response->json());
     }
 }

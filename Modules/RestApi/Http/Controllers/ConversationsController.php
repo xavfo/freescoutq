@@ -3,50 +3,40 @@
 namespace Modules\RestApi\Http\Controllers;
 
 use App\Conversation;
+use App\Customer;
 use App\Mailbox;
-use App\User;
+use App\Thread;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\RestApi\Entities\DTOs\ConversationDTO;
 use Modules\RestApi\Http\Requests\StoreConversationRequest;
 use Modules\RestApi\Http\Requests\UpdateConversationRequest;
+use Modules\RestApi\Support\LogsApiAudit;
+use Modules\RestApi\Support\MailboxAccess;
 
 class ConversationsController extends Controller
 {
+    use LogsApiAudit;
+
     /**
      * List conversations
      * GET /api/v1/conversations
      */
     public function index(Request $request): JsonResponse
     {
-        $userId = $request->attributes->get('user_id');
-        $mailboxIds = $request->attributes->get('mailbox_ids');
+        // Already normalized by CheckApiTokenMiddleware:
+        // null = every mailbox, array = authorized mailboxes.
+        $scope = $request->attributes->get('mailbox_ids');
 
         $query = Conversation::query();
 
-        // Authorization: user can only see their mailbox conversations
-        // If mailbox_ids is null, user has access to all mailboxes
-        // If mailbox_ids is an array, filter by those mailboxes
-        if ($mailboxIds !== null && is_array($mailboxIds) && count($mailboxIds) > 0) {
-            $query->whereIn('mailbox_id', $mailboxIds);
-        } elseif ($mailboxIds !== null && is_array($mailboxIds) && count($mailboxIds) === 0) {
-            // Empty array means no mailboxes assigned, return empty
-            return response()->json([
-                'data' => [],
-                'meta' => [
-                    'total' => 0,
-                    'page' => 1,
-                    'per_page' => 20,
-                ],
-            ], 200);
-        }
-        // If mailbox_ids is null, no filtering is applied (user has access to all)
+        MailboxAccess::applyScope($query, 'mailbox_id', $scope);
 
         // Apply filters
         if ($request->has('status')) {
-            $statuses = explode(',', $request->input('status'));
-            $query->whereIn('status', $statuses);
+            $statuses = array_filter(array_map('trim', explode(',', (string) $request->input('status'))));
+            $query->whereIn('status', array_map('intval', $statuses));
         }
 
         if ($request->has('customer_id')) {
@@ -74,7 +64,7 @@ class ConversationsController extends Controller
 
         // Transform data
         $data = $paginated->items();
-        $data = array_map(function($conv) {
+        $data = array_map(function ($conv) {
             return ConversationDTO::fromModel($conv)->toArray();
         }, $data);
 
@@ -101,8 +91,7 @@ class ConversationsController extends Controller
      */
     public function show(Request $request, $id): JsonResponse
     {
-        $userId = $request->attributes->get('user_id');
-        $mailboxIds = $request->attributes->get('mailbox_ids');
+        $scope = $request->attributes->get('mailbox_ids');
 
         $conversation = Conversation::find($id);
 
@@ -114,7 +103,7 @@ class ConversationsController extends Controller
         }
 
         // Check authorization
-        if (!in_array($conversation->mailbox_id, $mailboxIds ?? [])) {
+        if (!MailboxAccess::allows($scope, $conversation->mailbox_id)) {
             return response()->json([
                 'message' => 'Unauthorized to access this conversation',
                 'status_code' => 403,
@@ -133,17 +122,20 @@ class ConversationsController extends Controller
     public function store(StoreConversationRequest $request): JsonResponse
     {
         $userId = $request->attributes->get('user_id');
-        $mailboxIds = $request->attributes->get('mailbox_ids');
+        $scope = $request->attributes->get('mailbox_ids');
 
-        // Validate mailbox authorization
-        if (!in_array($request->input('mailbox_id'), $mailboxIds ?? [])) {
+        $mailboxId = (int) $request->input('mailbox_id');
+
+        // A token without mailbox_ids has access to every mailbox,
+        // a token with a list is limited to those mailboxes.
+        if (!MailboxAccess::allows($scope, $mailboxId)) {
             return response()->json([
                 'message' => 'Unauthorized to create conversation in this mailbox',
                 'status_code' => 403,
             ], 403);
         }
 
-        $mailbox = Mailbox::find($request->input('mailbox_id'));
+        $mailbox = Mailbox::find($mailboxId);
         if (!$mailbox) {
             return response()->json([
                 'message' => 'Mailbox not found',
@@ -151,55 +143,95 @@ class ConversationsController extends Controller
             ], 404);
         }
 
+        // array_values() because sanitizeEmails() may remove invalid entries
+        // without reindexing the list.
+        $to = array_values(Conversation::sanitizeEmails($request->input('to', [])));
+        $cc = array_values(Conversation::sanitizeEmails($request->input('cc', [])));
+        $bcc = array_values(Conversation::sanitizeEmails($request->input('bcc', [])));
+
+        if (empty($to)) {
+            return response()->json([
+                'message' => 'At least one valid recipient email is required',
+                'status_code' => 422,
+            ], 422);
+        }
+
         try {
-            // Create or get customer
             $customer = null;
-            if ($request->has('customer_id')) {
-                $customer = \App\Customer::find($request->input('customer_id'));
-            } else {
-                // Auto-create customer from email
-                $email = $request->input('to')[0];
-                $customer = \App\Customer::where('emails', 'like', "%{$email}%")->first();
+
+            if ($request->filled('customer_id')) {
+                $customer = Customer::find($request->input('customer_id'));
+            }
+
+            if (!$customer) {
+                // FreeScout keeps customer emails in the "emails" table,
+                // Customer::create() links the address to the customer.
+                $customer = Customer::getByEmail($to[0]);
 
                 if (!$customer) {
-                    $customer = \App\Customer::create([
-                        'first_name' => $email,
-                        'emails' => json_encode([$email]),
-                    ]);
+                    $customer = Customer::create($to[0]);
                 }
             }
 
-            // Create conversation
-            $conversation = Conversation::create([
-                'mailbox_id' => $request->input('mailbox_id'),
+            if (!$customer) {
+                return response()->json([
+                    'message' => 'Unable to resolve or create the customer',
+                    'status_code' => 422,
+                ], 422);
+            }
+
+            // Assignee: optional "assigned_to", token owner by default.
+            $assigneeId = $request->filled('assigned_to')
+                ? (int) $request->input('assigned_to')
+                : ($userId ? (int) $userId : null);
+
+            $conversation = new Conversation();
+            $conversation->mailbox_id = $mailbox->id;
+            $conversation->customer_id = $customer->id;
+            $conversation->customer_email = $to[0];
+            $conversation->type = (int) $request->input('type', Conversation::TYPE_EMAIL);
+            $conversation->status = (int) $request->input('status', Conversation::STATUS_ACTIVE);
+            $conversation->state = Conversation::STATE_PUBLISHED;
+            $conversation->subject = $request->input('subject');
+            $conversation->user_id = $assigneeId;
+            $conversation->created_by_user_id = $userId ? (int) $userId : null;
+            // source_via / source_type are required and have no database default.
+            $conversation->source_via = Conversation::PERSON_USER;
+            $conversation->source_type = Conversation::SOURCE_TYPE_API;
+            // folder_id is guarded and has no database default.
+            $conversation->updateFolder($mailbox);
+            $conversation->save();
+
+            // Thread is guarded, so it must be built through Thread::create(),
+            // which also fills status/state/source_via/source_type.
+            $thread = Thread::create($conversation, Thread::TYPE_MESSAGE, $request->input('body'), [
+                'user_id' => $assigneeId,
+                'created_by_user_id' => $userId ? (int) $userId : null,
                 'customer_id' => $customer->id,
-                'user_id' => $userId,
-                'subject' => $request->input('subject'),
-                'status' => $request->input('status', 1),
-                'type' => $request->input('type', 1), // Email by default
-                'state' => 2, // Published
+                'source_via' => Thread::PERSON_USER,
+                'source_type' => Thread::SOURCE_TYPE_API,
+                'from' => $mailbox->name . ' <' . $mailbox->email . '>',
+                'to' => $to,
+                'cc' => $cc,
+                'bcc' => $bcc,
             ]);
 
-            // Create initial thread
-            $thread = \App\Thread::create([
-                'conversation_id' => $conversation->id,
-                'user_id' => $userId,
-                'type' => 2, // Message
-                'body' => $request->input('body'),
-                'from' => $mailbox->from_name . ' <' . $mailbox->from_email . '>',
-                'to' => implode(',', $request->input('to')),
-                'cc' => implode(',', $request->input('cc', [])),
-                'bcc' => implode(',', $request->input('bcc', [])),
-            ]);
+            $thread->first = true;
+            $thread->save();
 
-            // Log audit
-            $this->logAudit($request, 'created', $conversation->id);
+            $this->logAudit($request, 'created', $conversation->id, 201);
+
+            // Reload so the response exposes the values written by ThreadObserver
+            // (threads_count, preview, last_reply_at).
+            $conversation = Conversation::find($conversation->id);
 
             return response()->json(
                 ConversationDTO::fromModel($conversation)->toArray(),
                 201
             );
         } catch (\Exception $e) {
+            \Log::error('RestApi: error creating conversation: ' . $e->getMessage());
+
             return response()->json([
                 'message' => 'Error creating conversation: ' . $e->getMessage(),
                 'status_code' => 500,
@@ -213,8 +245,7 @@ class ConversationsController extends Controller
      */
     public function update(UpdateConversationRequest $request, $id): JsonResponse
     {
-        $userId = $request->attributes->get('user_id');
-        $mailboxIds = $request->attributes->get('mailbox_ids');
+        $scope = $request->attributes->get('mailbox_ids');
 
         $conversation = Conversation::find($id);
 
@@ -226,7 +257,7 @@ class ConversationsController extends Controller
         }
 
         // Check authorization
-        if (!in_array($conversation->mailbox_id, $mailboxIds ?? [])) {
+        if (!MailboxAccess::allows($scope, $conversation->mailbox_id)) {
             return response()->json([
                 'message' => 'Unauthorized to update this conversation',
                 'status_code' => 403,
@@ -235,7 +266,7 @@ class ConversationsController extends Controller
 
         try {
             if ($request->has('status')) {
-                $conversation->status = $request->input('status');
+                $conversation->status = (int) $request->input('status');
             }
 
             if ($request->has('assigned_to')) {
@@ -246,6 +277,7 @@ class ConversationsController extends Controller
                 $conversation->customer_id = $request->input('customer_id');
             }
 
+            $conversation->updateFolder();
             $conversation->save();
 
             $this->logAudit($request, 'updated', $conversation->id);
@@ -268,8 +300,7 @@ class ConversationsController extends Controller
      */
     public function destroy(Request $request, $id): JsonResponse
     {
-        $userId = $request->attributes->get('user_id');
-        $mailboxIds = $request->attributes->get('mailbox_ids');
+        $scope = $request->attributes->get('mailbox_ids');
 
         $conversation = Conversation::find($id);
 
@@ -281,7 +312,7 @@ class ConversationsController extends Controller
         }
 
         // Check authorization
-        if (!in_array($conversation->mailbox_id, $mailboxIds ?? [])) {
+        if (!MailboxAccess::allows($scope, $conversation->mailbox_id)) {
             return response()->json([
                 'message' => 'Unauthorized to delete this conversation',
                 'status_code' => 403,
@@ -289,10 +320,11 @@ class ConversationsController extends Controller
         }
 
         try {
-            $conversation->state = 3; // Deleted state
+            $conversation->state = Conversation::STATE_DELETED;
+            $conversation->updateFolder();
             $conversation->save();
 
-            $this->logAudit($request, 'deleted', $conversation->id);
+            $this->logAudit($request, 'deleted', $conversation->id, 204);
 
             return response()->json(null, 204);
         } catch (\Exception $e) {
@@ -300,25 +332,6 @@ class ConversationsController extends Controller
                 'message' => 'Error deleting conversation: ' . $e->getMessage(),
                 'status_code' => 500,
             ], 500);
-        }
-    }
-
-    private function logAudit(Request $request, $action, $conversationId)
-    {
-        try {
-            $apiKeyId = $request->attributes->get('api_key_id');
-            $userId = $request->attributes->get('user_id');
-
-            \Illuminate\Support\Facades\DB::table('api_audit_logs')
-                ->where('api_key_id', $apiKeyId)
-                ->latest('id')
-                ->first()
-                ->update([
-                    'response_code' => 200,
-                    'response_message' => "Conversation {$conversationId} {$action}",
-                ]);
-        } catch (\Exception $e) {
-            // Silently fail
         }
     }
 }

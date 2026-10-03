@@ -25,8 +25,13 @@ class CustomerDTO
         $instance->id = $customer->id;
         $instance->first_name = $customer->first_name;
         $instance->last_name = $customer->last_name;
-        $instance->emails = $customer->emails ? json_decode($customer->emails, true) : [];
-        $instance->phone = $customer->phone;
+        // Emails live in the "emails" relation, not in a customers column.
+        $instance->emails = $customer->emails()
+            ->orderBy('id')
+            ->pluck('email')
+            ->all();
+        // Phones are stored as a JSON column.
+        $instance->phone = $customer->getMainPhoneNumber();
         $instance->photo_url = $customer->photo_url;
         $instance->created_at = $customer->created_at->toIso8601String();
         $instance->conversations_count = $customer->conversations()->count();
