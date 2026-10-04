@@ -93,6 +93,43 @@ class ApiKeyTest extends TestCase
         $this->assertSame([7, 8], $apiKey->fresh()->mailbox_ids);
     }
 
+    public function test_conversation_type_round_trip()
+    {
+        $user = factory(User::class)->create();
+        $token = ApiKey::generateToken();
+
+        $apiKey = ApiKey::create([
+            'user_id' => $user->id,
+            'name' => 'WhatsApp token',
+            'token' => $token,
+            'token_hash' => hash('sha256', $token),
+            'conversation_type' => 'whatsapp',
+            'active' => true,
+        ]);
+
+        $this->assertSame('whatsapp', $apiKey->fresh()->conversation_type);
+        $this->assertSame('WhatsApp', $apiKey->getConversationTypeName());
+        $this->assertArrayHasKey('whatsapp', ApiKey::getConversationTypes());
+    }
+
+    public function test_conversation_type_is_optional()
+    {
+        $user = factory(User::class)->create();
+        $token = ApiKey::generateToken();
+
+        $apiKey = ApiKey::create([
+            'user_id' => $user->id,
+            'name' => 'Any type',
+            'token' => $token,
+            'token_hash' => hash('sha256', $token),
+            'conversation_type' => null,
+            'active' => true,
+        ]);
+
+        $this->assertNull($apiKey->fresh()->conversation_type);
+        $this->assertNull($apiKey->getConversationTypeName());
+    }
+
     public function test_empty_mailbox_restriction_means_all_mailboxes()
     {
         $user = factory(User::class)->create();

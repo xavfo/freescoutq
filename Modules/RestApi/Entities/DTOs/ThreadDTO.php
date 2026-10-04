@@ -16,6 +16,8 @@ class ThreadDTO
     public $bcc;
     public $body;
     public $attachments_count;
+    public $send_status;
+    public $send_status_name;
     public $created_by_type; // 'user' or 'customer'
     public $created_by_name;
     public $created_at;
@@ -38,6 +40,8 @@ class ThreadDTO
         $instance->bcc = $thread->bcc;
         $instance->body = $thread->body;
         $instance->attachments_count = $thread->attachments()->count() ?? 0;
+        $instance->send_status = (int) $thread->send_status;
+        $instance->send_status_name = self::getSendStatusName($thread->send_status);
         $instance->created_by_type = $thread->customer_id ? 'customer' : 'user';
         $instance->created_by_name = $thread->customer
             ? $thread->customer->getFullName()
@@ -64,6 +68,8 @@ class ThreadDTO
             'bcc' => $this->bcc,
             'body' => $this->body,
             'attachments_count' => $this->attachments_count,
+            'send_status' => $this->send_status,
+            'send_status_name' => $this->send_status_name,
             'created_by' => [
                 'type' => $this->created_by_type,
                 'name' => $this->created_by_name,
@@ -87,5 +93,27 @@ class ThreadDTO
         ];
 
         return $types[$type] ?? 'unknown';
+    }
+
+    /**
+     * Delivery status of the thread, mirroring App\SendLog statuses.
+     *
+     * @param  int|null $status
+     * @return string
+     */
+    protected static function getSendStatusName($status)
+    {
+        switch ((int) $status) {
+            case 1:
+                return 'accepted';
+            case 2:
+                return 'send_error';
+            case 10:
+                return 'intermediate_error';
+            case 0:
+                return 'pending';
+        }
+
+        return 'unknown';
     }
 }

@@ -7,12 +7,52 @@ use Modules\RestApi\Support\MailboxAccess;
 
 class ApiKey extends Model
 {
+    /**
+     * Legacy conversation types of the api_keys.conversation_type enum.
+     *
+     * Kept for backwards compatibility with the database column and the old
+     * labels, but NOT enforced: tokens are not restricted by communication
+     * medium anymore, so the same token works with every channel.
+     */
+    const CONVERSATION_TYPES = [
+        'email'    => 'Email',
+        'web_form' => 'Formulario web',
+        'sms'      => 'SMS',
+        'call'     => 'Llamada',
+        'whatsapp' => 'WhatsApp',
+    ];
+
     protected $table = 'api_keys';
-    protected $fillable = ['user_id', 'name', 'token', 'token_hash', 'mailbox_ids', 'rate_limit', 'active', 'expires_at'];
+    protected $fillable = ['user_id', 'name', 'token', 'token_hash', 'mailbox_ids', 'conversation_type', 'rate_limit', 'active', 'expires_at'];
     protected $casts = [
         'expires_at' => 'datetime',
     ];
     protected $hidden = ['token', 'token_hash'];
+
+    /**
+     * Options for the "conversation type" selector: code => label.
+     *
+     * @return array
+     */
+    public static function getConversationTypes()
+    {
+        return self::CONVERSATION_TYPES;
+    }
+
+    /**
+     * Human readable name of the conversation type, or null when the token
+     * is not restricted to any particular type.
+     *
+     * @return string|null
+     */
+    public function getConversationTypeName()
+    {
+        if (!$this->conversation_type) {
+            return null;
+        }
+
+        return self::CONVERSATION_TYPES[$this->conversation_type] ?? $this->conversation_type;
+    }
 
     /**
      * Normalize mailbox_ids on the way in.

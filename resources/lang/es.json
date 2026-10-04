@@ -802,5 +802,21 @@
     "read more": "leer más",
     "via": "vía",
     "you": "tú",
-    "yourself": "tú mismo"
+    "yourself": "tú mismo",
+    "Send WhatsApp conversation replies through Evolution API": "Enviar las respuestas de conversaciones de WhatsApp a través de Evolution API",
+    "Evolution API base URL": "URL base de Evolution API",
+    "Evolution API instance name": "Nombre de la instancia de Evolution API",
+    "Evolution API key. Leave empty to keep the stored one.": "Clave de Evolution API. Déjala vacía para mantener la guardada.",
+    "•••••• (leave empty to keep it)": "•••••• (dejar vacío para mantenerla)",
+    "WhatsApp: message sent": "WhatsApp: mensaje enviado",
+    ":%tag_start%WhatsApp: message sent:%tag_end% :%view_start%View:%a_end% or :%undo_start%Undo:%a_end%": ":%tag_start%WhatsApp: mensaje enviado:%tag_end% :%view_start%Ver:%a_end% o :%undo_start%Deshacer:%a_end%",
+    "WhatsApp is not configured for this mailbox": "WhatsApp no está configurado para este buzón",
+    "WhatsApp credentials are not configured for this mailbox": "Las credenciales de WhatsApp no están configuradas para este buzón",
+    "No phone number found for the customer": "No se ha encontrado un número de teléfono para el cliente",
+    "The message is empty": "El mensaje está vacío",
+    "Attachments were not sent.": "Los archivos adjuntos no se han enviado.",
+    "Sending email is not configured for this mailbox": "El envío de correo no está configurado para este buzón",
+    "Unsupported conversation channel": "Canal de conversación no soportado",
+    "A phone number is required for WhatsApp/phone conversations": "Se requiere un número de teléfono para conversaciones de WhatsApp/teléfono",
+    "Unable to resolve or create the customer": "No se ha podido resolver o crear el cliente"
 }

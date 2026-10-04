@@ -147,6 +147,10 @@
                         <small class="form-text text-muted">Ingrese los IDs de los buzones separados por comas que este
                             token podrá acceder. Deje vacío para acceso a todos los buzones.</small>
                     </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        {{ __('rest-api::apitokens.no_media_restriction') }}
+                    </div>
                     <div class="form-group">
                         <label for="rate_limit">Límite de tasa *</label>
                         <input type="number" class="form-control" id="rate_limit" name="rate_limit" min="1" value="1000"

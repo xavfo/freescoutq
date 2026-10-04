@@ -38,6 +38,7 @@ return [
     'mailbox_ids_label' => 'Mailbox IDs (optional)',
     'mailbox_ids_placeholder' => '1,2,3 (leave empty for all)',
     'mailbox_ids_help' => 'Enter the mailbox IDs separated by commas that this token can access. Leave empty for access to all mailboxes.',
+    'no_media_restriction' => 'Tokens are not restricted by communication medium: the same token can work with email, phone, chat, custom and WhatsApp conversations.',
     'rate_limit_label' => 'Rate limit *',
     'rate_limit_help' => 'Maximum number of calls per hour allowed for this token.',
     'expires_at_label' => 'Expiration date (optional)',

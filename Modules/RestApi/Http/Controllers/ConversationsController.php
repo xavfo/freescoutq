@@ -12,6 +12,7 @@ use Illuminate\Routing\Controller;
 use Modules\RestApi\Entities\DTOs\ConversationDTO;
 use Modules\RestApi\Http\Requests\StoreConversationRequest;
 use Modules\RestApi\Http\Requests\UpdateConversationRequest;
+use Modules\RestApi\Support\Channels;
 use Modules\RestApi\Support\LogsApiAudit;
 use Modules\RestApi\Support\MailboxAccess;
 
@@ -118,6 +119,10 @@ class ConversationsController extends Controller
     /**
      * Create conversation
      * POST /api/v1/conversations
+     *
+     * Handles every communication medium: email (1), phone (2), chat (3),
+     * custom (4) and WhatsApp (5). The readable form can be sent in "channel"
+     * ("email", "whatsapp", ...) instead of the numeric "type".
      */
     public function store(StoreConversationRequest $request): JsonResponse
     {
@@ -143,42 +148,77 @@ class ConversationsController extends Controller
             ], 404);
         }
 
+        // Communication medium: "channel" (name) overrides "type" (number).
+        $type = Channels::type($request->input('type', Conversation::TYPE_EMAIL));
+        if ($request->filled('channel')) {
+            $type = Channels::type($request->input('channel'));
+        }
+        if ($type === null) {
+            return Channels::errorResponse(
+                Channels::ERROR_UNSUPPORTED_CHANNEL,
+                __('Unsupported conversation channel'),
+                'channel'
+            );
+        }
+
         // array_values() because sanitizeEmails() may remove invalid entries
         // without reindexing the list.
         $to = array_values(Conversation::sanitizeEmails($request->input('to', [])));
         $cc = array_values(Conversation::sanitizeEmails($request->input('cc', [])));
         $bcc = array_values(Conversation::sanitizeEmails($request->input('bcc', [])));
 
-        if (empty($to)) {
+        if (Channels::requiresEmail($type) && empty($to)) {
             return response()->json([
                 'message' => 'At least one valid recipient email is required',
                 'status_code' => 422,
             ], 422);
         }
 
+        // Phone / WhatsApp conversations are identified by a phone number,
+        // which may be sent in "phone" or as the first "to" entry.
+        $phone = null;
+        if (Channels::requiresPhone($type)) {
+            $phone = trim((string) $request->input('phone', ''));
+            if ($phone === '') {
+                $phone = trim((string) (reset($to) ?: ''));
+            }
+            if ($phone === '' && !$request->filled('customer_id')) {
+                return Channels::errorResponse(
+                    Channels::ERROR_PHONE_REQUIRED,
+                    __('A phone number is required for WhatsApp/phone conversations'),
+                    'phone'
+                );
+            }
+        }
+
+        // Deliver the message to the customer?
+        // WhatsApp conversations are delivered by default (that is their
+        // purpose). Email conversations are only delivered when the caller
+        // asks for it with send_message=true, preserving the historical
+        // "create only" behaviour of the API.
+        $send = Channels::shouldSend($request, $type);
+
+        if ($send && Channels::isDeliverable($type)) {
+            // Fail fast with a clear error instead of queueing a message that
+            // can never be delivered (mailbox without WhatsApp/SMTP config).
+            $check = Channels::check($mailbox, $type);
+            if (!$check['ok']) {
+                return Channels::errorResponse($check['error'], $check['message']);
+            }
+        }
+
         try {
-            $customer = null;
-
-            if ($request->filled('customer_id')) {
-                $customer = Customer::find($request->input('customer_id'));
-            }
+            $customer = $this->resolveCustomer($request, $type, $to, $phone);
 
             if (!$customer) {
-                // FreeScout keeps customer emails in the "emails" table,
-                // Customer::create() links the address to the customer.
-                $customer = Customer::getByEmail($to[0]);
-
-                if (!$customer) {
-                    $customer = Customer::create($to[0]);
-                }
+                return Channels::errorResponse(
+                    Channels::ERROR_CUSTOMER_UNRESOLVED,
+                    __('Unable to resolve or create the customer'),
+                    'to'
+                );
             }
 
-            if (!$customer) {
-                return response()->json([
-                    'message' => 'Unable to resolve or create the customer',
-                    'status_code' => 422,
-                ], 422);
-            }
+            $customerEmail = $this->customerEmailFor($customer, $type, $to);
 
             // Assignee: optional "assigned_to", token owner by default.
             $assigneeId = $request->filled('assigned_to')
@@ -188,8 +228,8 @@ class ConversationsController extends Controller
             $conversation = new Conversation();
             $conversation->mailbox_id = $mailbox->id;
             $conversation->customer_id = $customer->id;
-            $conversation->customer_email = $to[0];
-            $conversation->type = (int) $request->input('type', Conversation::TYPE_EMAIL);
+            $conversation->customer_email = $customerEmail;
+            $conversation->type = $type;
             $conversation->status = (int) $request->input('status', Conversation::STATUS_ACTIVE);
             $conversation->state = Conversation::STATE_PUBLISHED;
             $conversation->subject = $request->input('subject');
@@ -211,7 +251,7 @@ class ConversationsController extends Controller
                 'source_via' => Thread::PERSON_USER,
                 'source_type' => Thread::SOURCE_TYPE_API,
                 'from' => $mailbox->name . ' <' . $mailbox->email . '>',
-                'to' => $to,
+                'to' => Channels::requiresPhone($type) ? $phone : $to,
                 'cc' => $cc,
                 'bcc' => $bcc,
             ]);
@@ -219,16 +259,18 @@ class ConversationsController extends Controller
             $thread->first = true;
             $thread->save();
 
+            $queued = Channels::queueDelivery($conversation, $thread, $send);
+
             $this->logAudit($request, 'created', $conversation->id, 201);
 
             // Reload so the response exposes the values written by ThreadObserver
             // (threads_count, preview, last_reply_at).
             $conversation = Conversation::find($conversation->id);
 
-            return response()->json(
-                ConversationDTO::fromModel($conversation)->toArray(),
-                201
-            );
+            $response = ConversationDTO::fromModel($conversation)->toArray();
+            $response['delivery'] = Channels::deliveryInfo($type, $queued);
+
+            return response()->json($response, 201);
         } catch (\Exception $e) {
             \Log::error('RestApi: error creating conversation: ' . $e->getMessage());
 
@@ -333,5 +375,80 @@ class ConversationsController extends Controller
                 'status_code' => 500,
             ], 500);
         }
+    }
+
+    /**
+     * Resolve an existing customer or create a new one.
+     *
+     * @param  Request    $request
+     * @param  int|string $type
+     * @param  array      $to
+     * @param  string|null $phone
+     * @return Customer|null
+     */
+    protected function resolveCustomer(Request $request, $type, array $to, $phone)
+    {
+        if ($request->filled('customer_id')) {
+            $customer = Customer::find($request->input('customer_id'));
+            if ($customer) {
+                return $customer;
+            }
+        }
+
+        $email = Channels::requiresEmail($type) ? ($to[0] ?? null) : null;
+
+        if ($email && ($customer = Customer::getByEmail($email))) {
+            return $customer;
+        }
+
+        if ($phone && ($customer = Customer::findByPhone($phone))) {
+            return $customer;
+        }
+
+        // Build the data set for a new customer from name / phone.
+        $data = [];
+        $name = trim((string) $request->input('name', ''));
+        if ($name !== '') {
+            $parts = explode(' ', $name);
+            $data['first_name'] = $parts[0];
+            if (!empty($parts[1])) {
+                $data['last_name'] = $parts[1];
+            }
+        }
+        if ($phone) {
+            $data['phones'] = [$phone];
+        }
+
+        if ($email) {
+            // FreeScout keeps customer emails in the "emails" table,
+            // Customer::create() links the address to the customer.
+            return Customer::create($email, $data);
+        }
+
+        if ($data) {
+            return Customer::createWithoutEmail($data);
+        }
+
+        return null;
+    }
+
+    /**
+     * Email stored on the conversation.
+     *
+     * Email conversations use the recipient address; phone / WhatsApp use the
+     * customer's main email when it exists (it may be empty).
+     *
+     * @param  Customer   $customer
+     * @param  int|string $type
+     * @param  array      $to
+     * @return string
+     */
+    protected function customerEmailFor(Customer $customer, $type, array $to)
+    {
+        if (Channels::requiresEmail($type)) {
+            return isset($to[0]) ? $to[0] : '';
+        }
+
+        return (string) $customer->getMainEmail();
     }
 }

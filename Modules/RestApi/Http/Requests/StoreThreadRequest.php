@@ -16,6 +16,10 @@ class StoreThreadRequest extends FormRequest
         return [
             'type' => 'in:2,3,8',
             'body' => 'required|string',
+            // Whether the reply must be delivered to the customer through the
+            // conversation channel (email / WhatsApp). Alias: "send".
+            'send_message' => 'nullable|boolean',
+            'send' => 'nullable|boolean',
             'cc' => 'array',
             'cc.*' => 'email',
             'bcc' => 'array',

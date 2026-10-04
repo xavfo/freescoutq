@@ -26,6 +26,10 @@ class ApiTokenController extends Controller
      */
     public function store(Request $request)
     {
+        // API tokens are NOT restricted by communication medium: the same
+        // token can operate with email, phone, chat, custom and WhatsApp
+        // conversations. The legacy "conversation_type" input is accepted but
+        // ignored so old integrations do not break.
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'name' => 'required|string|max:255',
@@ -53,6 +57,9 @@ class ApiTokenController extends Controller
             'token' => $token,
             'token_hash' => $tokenHash,
             'mailbox_ids' => $mailboxIdsList,
+            // conversation_type is intentionally left null: tokens are not
+            // restricted by medium (see the comment above).
+            'conversation_type' => null,
             'rate_limit' => $request->rate_limit,
             'active' => true,
             'expires_at' => $request->expires_at ? \Carbon\Carbon::parse($request->expires_at) : null,

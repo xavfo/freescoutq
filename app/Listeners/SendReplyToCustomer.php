@@ -24,6 +24,12 @@ class SendReplyToCustomer
     {
         $conversation = $event->conversation;
 
+        // WhatsApp conversations are delivered through the Evolution API,
+        // see App\Listeners\SendWhatsappReply.
+        if ($conversation->isWhatsapp()) {
+            return;
+        }
+
         $main_customer_email = $conversation->customer->getMainEmail();
 
         // Do not send email if this is a Phone conversation and customer has no email.
@@ -55,7 +61,7 @@ class SendReplyToCustomer
         // Allow to cancel mail sending if needed.
         $skip_send = \Eventy::filter('conversation.skip_send_reply_to_customer', false, $conversation, $replies);
         if ($skip_send) {
-             return;
+            return;
         }
 
         // Chat conversation.
@@ -73,7 +79,8 @@ class SendReplyToCustomer
 
         // The reply may be sent to some other customer from previous threads.
         // https://github.com/freescout-help-desk/freescout/pull/5199
-        if ($thread 
+        if (
+            $thread
             && ($to_array = $thread->getToArray())
             && !empty($to_array[0])
             && ($customer_email = $to_array[0])

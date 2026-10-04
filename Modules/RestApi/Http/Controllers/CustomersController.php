@@ -143,4 +143,108 @@ class CustomersController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Update customer
+     * PUT /api/v1/customers/:id
+     */
+    public function update(Request $request, $id): JsonResponse
+    {
+        $customer = Customer::find($id);
+
+        if (!$customer) {
+            return response()->json([
+                'message' => 'Customer not found',
+                'status_code' => 404,
+            ], 404);
+        }
+
+        $request->validate([
+            'first_name' => 'sometimes|required|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:64',
+            'emails' => 'nullable|array',
+            'emails.*' => 'email',
+        ]);
+
+        try {
+            if ($request->has('first_name')) {
+                $customer->first_name = $request->input('first_name');
+            }
+
+            if ($request->has('last_name')) {
+                $customer->last_name = (string) $request->input('last_name');
+            }
+
+            // Phone is optional; an empty value clears the stored numbers.
+            if ($request->has('phone')) {
+                $phone = trim((string) $request->input('phone'));
+                $customer->setPhones($phone !== '' ? [$phone] : []);
+            }
+
+            // Emails are stored in the "emails" table.
+            foreach ((array) $request->input('emails', []) as $email) {
+                $email = Email::sanitizeEmail($email);
+                if ($email) {
+                    $customer->addEmail($email, true);
+                }
+            }
+
+            $customer->save();
+
+            $this->logAudit($request, 'updated', $customer->id);
+
+            return response()->json(CustomerDTO::fromModel($customer)->toArray(), 200);
+        } catch (\Exception $e) {
+            \Log::error('RestApi: error updating customer: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Error updating customer: ' . $e->getMessage(),
+                'status_code' => 500,
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete customer
+     * DELETE /api/v1/customers/:id
+     *
+     * A customer with conversations is not deleted (409) to avoid leaving
+     * conversations without a customer.
+     */
+    public function destroy(Request $request, $id): JsonResponse
+    {
+        $customer = Customer::find($id);
+
+        if (!$customer) {
+            return response()->json([
+                'message' => 'Customer not found',
+                'status_code' => 404,
+            ], 404);
+        }
+
+        if ($customer->conversations()->count() > 0) {
+            return response()->json([
+                'message' => 'Customer has conversations and cannot be deleted',
+                'status_code' => 409,
+                'error' => 'customer_has_conversations',
+            ], 409);
+        }
+
+        try {
+            // Removes the related rows in the "emails" table too.
+            $customer->deleteCustomer();
+
+            $this->logAudit($request, 'deleted', $id, 204);
+
+            return response()->json(null, 204);
+        } catch (\Exception $e) {
+            \Log::error('RestApi: error deleting customer: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Error deleting customer: ' . $e->getMessage(),
+                'status_code' => 500,
+            ], 500);
+        }
+    }
 }

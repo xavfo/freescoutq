@@ -1,0 +1,549 @@
+openapi: 3.0.3
+info:
+  title: FreeScout RestApi — QChat Integration
+  description: |
+    API REST de FreeScout para integraciones externas (QChat).
+
+    Soporta varios tipos de medio de conversación: `email` (1), `phone` (2),
+    `chat` (3), `custom` (4) y `whatsapp` (5). Los tokens de API **no** están
+    restringidos por medio; solo por buzón (`mailbox_ids`).
+
+    Guía de integración: `docs/qchat-integration.md`.
+  version: 1.0.0
+servers:
+  - url: https://tickets.qsoftware.biz/api/v1
+    description: Producción
+security:
+  - bearerAuth: []
+tags:
+  - name: Conversations
+  - name: Threads
+  - name: Customers
+
+paths:
+  /conversations:
+    get:
+      tags: [Conversations]
+      summary: Listar conversaciones
+      parameters:
+        - { name: status, in: query, schema: { type: string }, description: "CSV de estados: 1=active,2=pending,3=closed,4=spam" }
+        - { name: customer_id, in: query, schema: { type: integer } }
+        - { name: mailbox_id, in: query, schema: { type: integer } }
+        - { name: assigned_to, in: query, schema: { type: integer } }
+        - { name: sort, in: query, schema: { type: string, default: "-created_at" } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: per_page, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedConversations' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+    post:
+      tags: [Conversations]
+      summary: Crear conversación (cualquier medio)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConversationCreate' }
+            examples:
+              whatsapp:
+                summary: WhatsApp (se entrega por defecto)
+                value:
+                  mailbox_id: 3
+                  channel: whatsapp
+                  subject: Consulta por WhatsApp
+                  phone: "+34 600 11 22 33"
+                  name: Jane Doe
+                  body: Hola, ¿en qué podemos ayudarte?
+              email:
+                summary: Email con envío real
+                value:
+                  mailbox_id: 3
+                  channel: email
+                  subject: Pedido #42
+                  to: [cliente@example.com]
+                  body: Adjuntamos el detalle del pedido.
+                  send_message: true
+              phone:
+                summary: Teléfono
+                value:
+                  mailbox_id: 3
+                  type: 2
+                  subject: Llamada entrante
+                  phone: "+34 600 11 22 33"
+                  name: Jane Doe
+                  body: Resumen de la llamada
+      responses:
+        '201':
+          description: Conversación creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Conversation' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403':
+          description: Sin acceso a ese buzón
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: |
+            Validación o configuración de canal:
+            `validation`, `whatsapp_not_configured`, `email_not_configured`,
+            `phone_required`, `unsupported_channel`, `customer_unresolved`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /conversations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Conversations]
+      summary: Obtener conversación
+      responses:
+        '200':
+          description: Conversación
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Conversation' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Conversations]
+      summary: Actualizar conversación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: integer, enum: [1, 2, 3, 4] }
+                assigned_to: { type: integer, nullable: true }
+                customer_id: { type: integer }
+      responses:
+        '200':
+          description: Conversación actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Conversation' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Conversations]
+      summary: Eliminar conversación (borrado lógico)
+      responses:
+        '204': { description: Eliminada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /conversations/{id}/threads:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Threads]
+      summary: Listar hilos de una conversación
+      parameters:
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: per_page, in: query, schema: { type: integer, default: 50, maximum: 200 } }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedThreads' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Threads]
+      summary: Añadir hilo (mensaje o nota)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ThreadCreate' }
+      responses:
+        '201':
+          description: Hilo creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Thread' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422':
+          description: Validación o canal sin configurar (`whatsapp_not_configured`, `email_not_configured`).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /threads/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Threads]
+      summary: Obtener hilo
+      responses:
+        '200':
+          description: Hilo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Thread' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Threads]
+      summary: Editar hilo (solo el autor)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string }
+      responses:
+        '200':
+          description: Hilo actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Thread' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Threads]
+      summary: Eliminar hilo
+      responses:
+        '204': { description: Eliminado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /customers:
+    get:
+      tags: [Customers]
+      summary: Listar clientes
+      parameters:
+        - { name: search, in: query, schema: { type: string }, description: Nombre o email }
+        - { name: sort, in: query, schema: { type: string, default: "-created_at" } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: per_page, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedCustomers' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Customers]
+      summary: Crear cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CustomerCreate' }
+      responses:
+        '201':
+          description: Cliente creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Customer' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: Ya existe un cliente con ese email
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: Validación
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /customers/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Customers]
+      summary: Obtener cliente
+      responses:
+        '200':
+          description: Cliente + conversaciones recientes
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Customer'
+                  - type: object
+                    properties:
+                      recent_conversations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            subject: { type: string, nullable: true }
+                            status: { type: integer }
+                            created_at: { type: string, format: date-time }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Customers]
+      summary: Actualizar cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name: { type: string }
+                last_name: { type: string, nullable: true }
+                phone: { type: string, nullable: true }
+                emails:
+                  type: array
+                  items: { type: string, format: email }
+      responses:
+        '200':
+          description: Cliente actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Customer' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422':
+          description: Validación
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      tags: [Customers]
+      summary: Eliminar cliente (falla si tiene conversaciones)
+      responses:
+        '204': { description: Eliminado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: El cliente tiene conversaciones
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'Token de API ("fs_..."). Se genera en Ajustes → API → Administrar Tokens.'
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+
+  responses:
+    Unauthorized:
+      description: Token ausente, inválido o caducado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Sin acceso al recurso
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: Límite de tasa superado
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message: { type: string }
+        status_code: { type: integer }
+        error:
+          type: string
+          description: 'Código estable: validation, whatsapp_not_configured, email_not_configured, phone_required, unsupported_channel, customer_unresolved, customer_has_conversations.'
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+
+    Meta:
+      type: object
+      properties:
+        total: { type: integer }
+        page: { type: integer }
+        per_page: { type: integer }
+        last_page: { type: integer }
+
+    PaginationLinks:
+      type: object
+      nullable: true
+      properties:
+        first: { type: string, nullable: true }
+        last: { type: string, nullable: true }
+        next: { type: string, nullable: true }
+        prev: { type: string, nullable: true }
+
+    Delivery:
+      type: object
+      properties:
+        channel: { type: string, enum: [email, phone, chat, custom, whatsapp] }
+        type: { type: integer, enum: [1, 2, 3, 4, 5] }
+        deliverable: { type: boolean }
+        send_message: { type: boolean }
+
+    ConversationCreate:
+      type: object
+      required: [mailbox_id, subject, body]
+      properties:
+        mailbox_id: { type: integer }
+        type: { type: integer, enum: [1, 2, 3, 4, 5], description: '1=email,2=phone,3=chat,4=custom,5=whatsapp' }
+        channel: { type: string, enum: [email, phone, chat, custom, whatsapp] }
+        subject: { type: string, maxLength: 500 }
+        body: { type: string }
+        to:
+          type: array
+          description: 'Email: obligatorio (direcciones). Phone/WhatsApp: opcional, alternativa a `phone`.'
+          items: { type: string }
+        cc: { type: array, items: { type: string, format: email } }
+        bcc: { type: array, items: { type: string, format: email } }
+        phone: { type: string, description: 'Teléfono del cliente para phone/whatsapp.' }
+        name: { type: string, description: 'Nombre del cliente para phone/whatsapp.' }
+        customer_id: { type: integer }
+        assigned_to: { type: integer }
+        status: { type: integer, enum: [1, 2, 3, 4], default: 1 }
+        send_message: { type: boolean, description: 'Entregar al cliente. WhatsApp por defecto true.' }
+        send: { type: boolean, description: Alias de send_message. }
+
+    Conversation:
+      type: object
+      properties:
+        id: { type: integer }
+        mailbox_id: { type: integer }
+        subject: { type: string, nullable: true }
+        preview: { type: string, nullable: true }
+        customer:
+          type: object
+          properties:
+            name: { type: string }
+            email: { type: string, nullable: true }
+        status: { type: integer }
+        status_name: { type: string }
+        state: { type: integer }
+        type: { type: integer }
+        type_name: { type: string }
+        channel: { type: string, enum: [email, phone, chat, custom, whatsapp] }
+        threads_count: { type: integer }
+        assignee:
+          type: object
+          properties:
+            id: { type: integer, nullable: true }
+            name: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        last_message_preview: { type: string, nullable: true }
+        delivery: { $ref: '#/components/schemas/Delivery' }
+
+    ThreadCreate:
+      type: object
+      required: [body]
+      properties:
+        type: { type: integer, enum: [2, 3, 8], default: 2, description: '2=mensaje,3=nota,8=chat' }
+        body: { type: string }
+        send_message: { type: boolean }
+        send: { type: boolean, description: Alias de send_message. }
+        cc: { type: array, items: { type: string, format: email } }
+        bcc: { type: array, items: { type: string, format: email } }
+
+    Thread:
+      type: object
+      properties:
+        id: { type: integer }
+        conversation_id: { type: integer }
+        type: { type: integer }
+        type_name: { type: string }
+        from: { type: string, nullable: true }
+        to: { type: string, nullable: true }
+        cc: { type: string, nullable: true }
+        bcc: { type: string, nullable: true }
+        body: { type: string }
+        attachments_count: { type: integer }
+        send_status: { type: integer }
+        send_status_name: { type: string, enum: [pending, accepted, send_error, intermediate_error, unknown] }
+        created_by:
+          type: object
+          properties:
+            type: { type: string }
+            name: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        delivery: { $ref: '#/components/schemas/Delivery' }
+
+    CustomerCreate:
+      type: object
+      required: [first_name, emails]
+      properties:
+        first_name: { type: string }
+        last_name: { type: string }
+        emails: { type: array, minItems: 1, items: { type: string, format: email } }
+        phone: { type: string }
+
+    Customer:
+      type: object
+      properties:
+        id: { type: integer }
+        first_name: { type: string, nullable: true }
+        last_name: { type: string, nullable: true }
+        full_name: { type: string }
+        emails: { type: array, items: { type: string } }
+        phone: { type: string, nullable: true }
+        photo_url: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        conversations_count: { type: integer }
+
+    PaginatedConversations:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Conversation' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+        links: { $ref: '#/components/schemas/PaginationLinks' }
+
+    PaginatedThreads:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Thread' } }
+        meta: { $ref: '#/components/schemas/Meta' }
+
+    PaginatedCustomers:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Customer' } }
+        meta: { $ref: '#/components/schemas/Meta' }

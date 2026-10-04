@@ -82,8 +82,8 @@ class MailboxesController extends Controller
 
         if ($invalid || $validator->fails()) {
             return redirect()->route('mailboxes.create')
-                        ->withErrors($validator)
-                        ->withInput();
+                ->withErrors($validator)
+                ->withInput();
         }
 
         $request_data = [
@@ -118,7 +118,7 @@ class MailboxesController extends Controller
             $accessible_route = '';
 
             $mailbox_settings = $user->mailboxSettings($mailbox->id);
-            
+
             if (!is_array($mailbox_settings->access)) {
                 $access_permissions = json_decode($mailbox_settings->access ?? '');
             } else {
@@ -171,7 +171,7 @@ class MailboxesController extends Controller
 
         $can_update_settings = $user->can('updateSettings', $mailbox);
         $can_update_signature = $user->can('updateEmailSignature', $mailbox);
-        
+
         if (!$can_update_settings && !$can_update_signature) {
             \Helper::denyAccess();
         }
@@ -195,13 +195,17 @@ class MailboxesController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'name'             => 'required|string|max:40',
-                'email'            => 'required|string|email|max:128|unique:mailboxes,email,'.$id,
+                'email'            => 'required|string|email|max:128|unique:mailboxes,email,' . $id,
                 'aliases'          => 'nullable|string',
                 'from_name'        => 'required|integer',
                 'from_name_custom' => 'nullable|string|max:128',
                 'ticket_status'    => 'required|integer',
                 'template'         => 'required|integer',
                 'ticket_assignee'  => 'required|integer',
+                // WhatsApp (Evolution API).
+                'whatsapp_url'      => 'nullable|string|max:255',
+                'whatsapp_instance' => 'nullable|string|max:128',
+                'whatsapp_apikey'   => 'nullable|string|max:255',
             ]);
 
             //event(new Registered($user = $this->create($request->all())));
@@ -214,8 +218,8 @@ class MailboxesController extends Controller
 
             if ($invalid || count($validator->errors()) || $validator->fails()) {
                 return redirect()->route('mailboxes.update', ['id' => $id])
-                            ->withErrors($validator)
-                            ->withInput();
+                    ->withErrors($validator)
+                    ->withInput();
             }
 
             $allowed_fields = [
@@ -262,6 +266,24 @@ class MailboxesController extends Controller
             $mailbox->setMetaParam('chat_start_new', true);
         } else {
             $mailbox->removeMetaParam('chat_start_new');
+        }
+
+        // WhatsApp (Evolution API). An empty API key keeps the stored one.
+        if (
+            $request->exists('whatsapp_url') || $request->exists('whatsapp_instance')
+            || $request->exists('whatsapp_apikey') || $request->exists('whatsapp_enabled')
+        ) {
+            $whatsapp = $mailbox->getWhatsappSettings();
+
+            $whatsapp['url'] = trim((string) $request->whatsapp_url);
+            $whatsapp['instance'] = trim((string) $request->whatsapp_instance);
+            $whatsapp['enabled'] = (bool) $request->filled('whatsapp_enabled');
+
+            if ($request->filled('whatsapp_apikey')) {
+                $whatsapp['apikey'] = $request->whatsapp_apikey;
+            }
+
+            $mailbox->setWhatsappSettings($whatsapp);
         }
 
         $mailbox->signature = \Helper::stripDangerousTags($mailbox->signature);
@@ -411,8 +433,8 @@ class MailboxesController extends Controller
 
             if ($validator->fails()) {
                 return redirect()->route('mailboxes.connection', ['id' => $id])
-                            ->withErrors($validator)
-                            ->withInput();
+                    ->withErrors($validator)
+                    ->withInput();
             }
         }
 
@@ -499,8 +521,8 @@ class MailboxesController extends Controller
 
         if ($validator->fails()) {
             return redirect()->route('mailboxes.connection.incoming', ['id' => $id])
-                        ->withErrors($validator)
-                        ->withInput();
+                ->withErrors($validator)
+                ->withInput();
         }
 
         // Checkboxes
@@ -577,7 +599,10 @@ class MailboxesController extends Controller
 
         $query_conversations = Conversation::getQueryByFolder($folder, $user->id);
         $conversations = $folder->queryAddOrderBy($query_conversations)->paginate(
-            Conversation::DEFAULT_LIST_SIZE, ['*'], 'page', $request->get('page')
+            Conversation::DEFAULT_LIST_SIZE,
+            ['*'],
+            'page',
+            $request->get('page')
         );
 
         return view('mailboxes/view', [
@@ -596,14 +621,14 @@ class MailboxesController extends Controller
             if (Route::currentRouteName() != 'mailboxes.connection' && !$mailbox->isOutActive()) {
                 $flashes[] = [
                     'type'      => 'warning',
-                    'text'      => __('Sending emails need to be configured for the mailbox in order to send emails to customers and support agents').' ('.__('Connection Settings').' » <a href="'.route('mailboxes.connection', ['id' => $mailbox->id]).'">'.__('Sending Emails').'</a>)',
+                    'text'      => __('Sending emails need to be configured for the mailbox in order to send emails to customers and support agents') . ' (' . __('Connection Settings') . ' » <a href="' . route('mailboxes.connection', ['id' => $mailbox->id]) . '">' . __('Sending Emails') . '</a>)',
                     'unescaped' => true,
                 ];
             }
             if (Route::currentRouteName() != 'mailboxes.connection.incoming' && !$mailbox->isInActive()) {
                 $flashes[] = [
                     'type'      => 'warning',
-                    'text'      => __('Receiving emails need to be configured for the mailbox in order to fetch emails from your support email address').' ('.__('Connection Settings').' » <a href="'.route('mailboxes.connection.incoming', ['id' => $mailbox->id]).'">'.__('Fetching Emails').'</a>)',
+                    'text'      => __('Receiving emails need to be configured for the mailbox in order to fetch emails from your support email address') . ' (' . __('Connection Settings') . ' » <a href="' . route('mailboxes.connection.incoming', ['id' => $mailbox->id]) . '">' . __('Fetching Emails') . '</a>)',
                     'unescaped' => true,
                 ];
             }
@@ -636,7 +661,7 @@ class MailboxesController extends Controller
     {
         $mailbox = Mailbox::findOrFail($id);
 
-//        $this->authorize('update', $mailbox);
+        //        $this->authorize('update', $mailbox);
         $this->authorize('updateAutoReply', $mailbox);
 
         $request->merge([
@@ -657,8 +682,8 @@ class MailboxesController extends Controller
 
             if ($validator->fails()) {
                 return redirect()->route('mailboxes.auto_reply', ['id' => $id])
-                            ->withErrors($validator)
-                            ->withInput();
+                    ->withErrors($validator)
+                    ->withInput();
             }
         }
 
@@ -726,7 +751,7 @@ class MailboxesController extends Controller
                 if (!$response['msg'] && $mailbox->out_method == Mailbox::OUT_METHOD_SMTP) {
                     $test_result = \Helper::checkPort($mailbox->out_server, $mailbox->out_port);
                     if (!$test_result) {
-                        $response['msg'] = __(':host is not available on :port port. Make sure that :host address is correct and that outgoing port :port on YOUR server is open.', ['host' => '<strong>'.$mailbox->out_server.'</strong>', 'port' => '<strong>'.$mailbox->out_port.'</strong>']);
+                        $response['msg'] = __(':host is not available on :port port. Make sure that :host address is correct and that outgoing port :port on YOUR server is open.', ['host' => '<strong>' . $mailbox->out_server . '</strong>', 'port' => '<strong>' . $mailbox->out_port . '</strong>']);
                     }
                 }
 
@@ -777,7 +802,7 @@ class MailboxesController extends Controller
                 if (!$response['msg'] && !$tested) {
                     $test_result = \Helper::checkPort($mailbox->in_server, $mailbox->in_port);
                     if (!$test_result) {
-                        $response['msg'] = __(':host is not available on :port port. Make sure that :host address is correct and that outgoing port :port on YOUR server is open.', ['host' => '<strong>'.$mailbox->in_server.'</strong>', 'port' => '<strong>'.$mailbox->in_port.'</strong>']);
+                        $response['msg'] = __(':host is not available on :port port. Make sure that :host address is correct and that outgoing port :port on YOUR server is open.', ['host' => '<strong>' . $mailbox->in_server . '</strong>', 'port' => '<strong>' . $mailbox->in_port . '</strong>']);
                     }
                 }
 
@@ -848,11 +873,10 @@ class MailboxesController extends Controller
                             //     $response['folders'] = array_values($response['folders']);
                             // }
 
-                            $response['msg_success'] = __('IMAP folders retrieved: '.implode(', ', $response['folders']));
+                            $response['msg_success'] = __('IMAP folders retrieved: ' . implode(', ', $response['folders']));
                         } else {
                             $response['msg_success'] = __('Connected, but no IMAP folders found');
                         }
-
                     } catch (\Exception $e) {
                         $response['msg'] = $e->getMessage();
                     }
@@ -956,7 +980,7 @@ class MailboxesController extends Controller
         $mailbox_id = $request->id ?? '';
         $provider = $request->provider ?? '';
         $in_out = $request->in_out ?? 'in';
-        
+
         $state_data = [];
         if (!empty($request->state)) {
             $state_data = json_decode($request->state, true);
@@ -984,7 +1008,7 @@ class MailboxesController extends Controller
         $this->authorize('admin', $mailbox);
 
         if (empty($mailbox)) {
-            return __('Mailbox not found').': '.$mailbox_id;
+            return __('Mailbox not found') . ': ' . $mailbox_id;
         }
         if ($in_out == 'in') {
             $username = $mailbox->getInOauthClientId();
@@ -1001,8 +1025,8 @@ class MailboxesController extends Controller
         }
 
         $session_data = [];
-        if (\Session::get('mailbox_oauth_'.$provider.'_'.$mailbox_id)) {
-            $session_data = \Session::get('mailbox_oauth_'.$provider.'_'.$mailbox_id);
+        if (\Session::get('mailbox_oauth_' . $provider . '_' . $mailbox_id)) {
+            $session_data = \Session::get('mailbox_oauth_' . $provider . '_' . $mailbox_id);
         }
 
         if (empty($request->code)) {
@@ -1011,14 +1035,14 @@ class MailboxesController extends Controller
                 'provider' => $provider,
                 'mailbox_id' => $mailbox_id,
                 'in_out' => $in_out,
-                'state' => crc32($username.$password),
+                'state' => crc32($username . $password),
             ];
             $url = \MailHelper::oauthGetAuthorizationUrl($provider, [
                 'state' => json_encode($state),
                 'client_id' => $username,
             ]);
             if ($url) {
-                \Session::put('mailbox_oauth_'.$provider.'_'.$mailbox_id, $state);
+                \Session::put('mailbox_oauth_' . $provider . '_' . $mailbox_id, $state);
                 //     [
                 //     'provider' => $request->provider,
                 //     'mailbox_id' => $request->mailbox_id,
@@ -1029,12 +1053,11 @@ class MailboxesController extends Controller
                 return 'Could not generate authorization URL: check Client ID (Username) and Client Secret (Password)';
             }
 
-        // Check given state against previously stored one to mitigate CSRF attack
+            // Check given state against previously stored one to mitigate CSRF attack
         } elseif (empty($request->state) || ($state_data['state'] ?? '') !== ($session_data['state'] ?? '')) {
-            
-            \Session::forget('mailbox_oauth_'.$provider.'_'.$mailbox_id);
-            return 'Invalid oAuth state';
 
+            \Session::forget('mailbox_oauth_' . $provider . '_' . $mailbox_id);
+            return 'Invalid oAuth state';
         } else {
             // state is set.
             // Try to get an access token (using the authorization code grant)
@@ -1047,7 +1070,8 @@ class MailboxesController extends Controller
             if (!empty($token_data['a_token'])) {
                 // Set username and password for the oppozite in_out.
                 if ($in_out == 'in') {
-                    if (empty($mailbox->out_server) 
+                    if (
+                        empty($mailbox->out_server)
                         || ($mailbox->isOutServerOauth()
                             && (!$mailbox->out_username || $mailbox->out_username == $username))
                     ) {
@@ -1061,7 +1085,7 @@ class MailboxesController extends Controller
                 }
                 $mailbox->setMetaParam('oauth', $token_data, true);
             } elseif (!empty($token_data['error'])) {
-                return __('Error occurred').': '.htmlspecialchars($token_data['error']);
+                return __('Error occurred') . ': ' . htmlspecialchars($token_data['error']);
             }
 
             if ($in_out == 'in') {
@@ -1081,7 +1105,7 @@ class MailboxesController extends Controller
 
         $mailbox = Mailbox::findOrFail($mailbox_id);
         $this->authorize('admin', $mailbox);
-        
+
         // oAuth Disconnect.
         $mailbox->removeMetaParam('oauth', true);
 

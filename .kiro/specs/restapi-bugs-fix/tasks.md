@@ -147,3 +147,36 @@
         (la normalización los tolera, pero conviene confirmarlo con datos reales) y reescribirlos al formato canónico si procede.
   - [ ] 7.6 Falta probar las escrituras contra la instancia de prueba real y **nunca** sobre producción: crear una conversación
         puede enviar correo al destinatario.
+
+## Trabajo relacionado: canal de WhatsApp
+
+- Se añadió el tipo de conversación `whatsapp` al catálogo de los tokens de API (`ApiKey::CONVERSATION_TYPES`), con columna y selector en la vista, validación en `ApiTokenController` y tests en `ApiKeyTest`. **Los endpoints REST todavía no aplican ese campo** (ver opciones en `.kiro/specs/whatsapp-channel/feature.md`).
+- El canal de WhatsApp (tipo propio de conversación + envío real por Evolution API) está documentado y verificado en `.kiro/specs/whatsapp-channel/feature.md`.
+
+## Trabajo relacionado: API multi-medio y errores de configuración (2026-10-03)
+
+- **Endpoints con varios tipos de medio (incl. WhatsApp):** `POST /api/v1/conversations` y
+  `POST /api/v1/conversations/{id}/threads` aceptan `type` (1=email, 2=phone, 3=chat, 4=custom,
+  5=whatsapp) o `channel` (`email|phone|chat|custom|whatsapp`). Para telefonía/WhatsApp el
+  destinatario se identifica por `phone` (o `to[0]`) y el cliente se busca/crea por teléfono.
+  Nuevo helper `Modules/RestApi/Support/Channels.php` (nombres, validaciones y entrega).
+- **Tokens sin restricción por medio:** se eliminó `conversation_type` del formulario y de la
+  validación/guardado (`ApiTokenController`). La columna se conserva (nullable) por compatibilidad;
+  ningún endpoint aplica restricción de medio. Solo se mantiene la restricción **por buzón**.
+- **Errores de configuración informados:** `send_message` (alias `send`) decide la entrega real.
+  Antes de encolar se valida el buzón y se responde `422` con código estable:
+  `whatsapp_not_configured`, `email_not_configured`, `phone_required`, `unsupported_channel`,
+  `customer_unresolved`, `validation`. La entrega se encola en la cola `emails`
+  (`SendWhatsappReply` / `SendReplyToCustomer`). Por defecto WhatsApp se entrega; email solo si
+  `send_message=true` (compatibilidad).
+- **DTOs:** `ConversationDTO` expone `type_name` y `channel`; `ThreadDTO` expone `send_status` y
+  `send_status_name`; las respuestas de creación añaden un bloque `delivery`.
+- **CRUD de clientes completado:** `PUT/DELETE /api/v1/customers/{id}` (las rutas existían sin
+  método). `DELETE` responde `409 customer_has_conversations` si el cliente tiene conversaciones.
+- **Verificación real:** script temporal contra `freescout-test` ejercitando los controladores y
+  `FormRequest` reales (con `Queue::fake()`): **45/45 comprobaciones**, 0 fallos. Se encontró y
+  corrigió un bug: la validación de `StoreConversationRequest` ignoraba `channel` (solo miraba `type`).
+  Se añadió `Modules/RestApi/Tests/Feature/Api/ConversationMediaTest.php` (pendiente de ejecutar con
+  PHPUnit, no disponible en este clon).
+- **Documentación QChat:** `docs/qchat-integration.md` (guía completa) y `docs/openapi.yaml`
+  (OpenAPI 3.0, 6 rutas, 13 esquemas).

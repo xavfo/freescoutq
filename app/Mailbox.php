@@ -200,7 +200,7 @@ class Mailbox extends Model
             $this->attributes['out_password'] = '';
         }
     }
-    
+
     /**
      * Automatically decrypt password on read.
      */
@@ -341,7 +341,7 @@ class Mailbox extends Model
         if ($main_folders) {
             return $main_folders;
         }
-        
+
         return $this->folders()
             ->where(function ($query) {
                 $query->whereIn('type', [Folder::TYPE_UNASSIGNED, Folder::TYPE_ASSIGNED, Folder::TYPE_DRAFTS])
@@ -440,7 +440,8 @@ class Mailbox extends Model
      */
     public function isOutActive()
     {
-        if ($this->out_method != self::OUT_METHOD_PHP_MAIL && $this->out_method != self::OUT_METHOD_SENDMAIL
+        if (
+            $this->out_method != self::OUT_METHOD_PHP_MAIL && $this->out_method != self::OUT_METHOD_SENDMAIL
             && (!$this->out_server /*|| !$this->out_username || !$this->out_password*/)
         ) {
             return false;
@@ -895,11 +896,11 @@ class Mailbox extends Model
     public static function findOrFailWithSettings($id, $user_id)
     {
         return Mailbox::select(['mailboxes.*', 'mailbox_user.hide', 'mailbox_user.mute', 'mailbox_user.access'])
-                        ->where('mailboxes.id', $id)
-                        ->leftJoin('mailbox_user', function ($join) use ($user_id) {
-                            $join->on('mailbox_user.mailbox_id', '=', 'mailboxes.id');
-                            $join->where('mailbox_user.user_id', $user_id);
-                        })->firstOrFail();
+            ->where('mailboxes.id', $id)
+            ->leftJoin('mailbox_user', function ($join) use ($user_id) {
+                $join->on('mailbox_user.mailbox_id', '=', 'mailboxes.id');
+                $join->where('mailbox_user.user_id', $user_id);
+            })->firstOrFail();
     }
 
     /*public static function getUserSettings($mailbox_id, $user_id)
@@ -980,6 +981,96 @@ class Mailbox extends Model
     }
 
     /**
+     * WhatsApp (Evolution API) settings of the mailbox.
+     *
+     * Stored in the mailbox meta; the API key is encrypted at rest.
+     *
+     * @return array
+     */
+    public function getWhatsappSettings()
+    {
+        $settings = $this->getMeta('whatsapp');
+
+        if (!is_array($settings)) {
+            $settings = [];
+        }
+
+        $settings = array_merge([
+            'enabled'  => false,
+            'url'      => '',
+            'instance' => '',
+            'apikey'   => '',
+        ], $settings);
+
+        if ($settings['apikey'] !== '') {
+            // Helper::decrypt() returns the value unchanged when it can not be
+            // decrypted, so the stored value can still be used as is.
+            $settings['apikey'] = \Helper::decrypt($settings['apikey']);
+        }
+
+        return $settings;
+    }
+
+    /**
+     * Save the WhatsApp (Evolution API) settings of the mailbox.
+     *
+     * @param array $settings
+     */
+    public function setWhatsappSettings(array $settings)
+    {
+        $settings = array_merge([
+            'enabled'  => false,
+            'url'      => '',
+            'instance' => '',
+            'apikey'   => '',
+        ], $settings);
+
+        $settings['url'] = rtrim(trim((string) $settings['url']), '/');
+        $settings['enabled'] = !empty($settings['enabled']);
+        $settings['apikey'] = self::encryptWhatsappApiKey($settings['apikey']);
+
+        $this->setMetaParam('whatsapp', $settings);
+    }
+
+    /**
+     * Encrypt an Evolution API key unless it is already encrypted.
+     *
+     * @param  string $value
+     * @return string
+     */
+    public static function encryptWhatsappApiKey($value)
+    {
+        $value = (string) $value;
+
+        if ($value === '') {
+            return '';
+        }
+
+        // Helper::decrypt() returns the value unchanged when it can not be
+        // decrypted: a different result means it is already encrypted.
+        if (\Helper::decrypt($value) !== $value) {
+            return $value;
+        }
+
+        return \Helper::encrypt($value);
+    }
+
+    /**
+     * Whether the mailbox is ready to send WhatsApp messages.
+     *
+     * @return bool
+     */
+    public function isWhatsappEnabled()
+    {
+        $settings = $this->getWhatsappSettings();
+
+        return !empty($settings['enabled'])
+            && $settings['url'] !== ''
+            && $settings['instance'] !== ''
+            && $settings['apikey'] !== '';
+    }
+
+    /**
      * Check if there is a user with specified email.
      */
     public static function userEmailExists($email)
@@ -1013,17 +1104,17 @@ class Mailbox extends Model
 
     public function inOauthEnabled()
     {
-        return $this->oauthEnabled() 
-            && $this->in_username !== null 
+        return $this->oauthEnabled()
+            && $this->in_username !== null
             && $this->isInUsernameOauth();
     }
 
     public function outOauthEnabled()
     {
-        return $this->oauthEnabled() 
+        return $this->oauthEnabled()
             && $this->out_username !== null
             && $this->isOutUsernameOauth()
-            && $this->out_server !== null 
+            && $this->out_server !== null
             && $this->isOutServerOauth();
     }
 
@@ -1032,7 +1123,7 @@ class Mailbox extends Model
     public function getInOauthUsername()
     {
         $username = preg_replace("#:.*#", '', $this->in_username ?? '');
-        
+
         if (strstr($username, '@')) {
             return $username;
         } else {
@@ -1092,7 +1183,7 @@ class Mailbox extends Model
     {
         // Remove threads and conversations.
         $conversation_ids = $this->conversations()->pluck('id')->toArray();
-        
+
         // for ($i=0; $i < ceil(count($conversation_ids) / \Helper::IN_LIMIT); $i++) { 
         //     $slice_ids = array_slice($conversation_ids, $i*\Helper::IN_LIMIT, \Helper::IN_LIMIT);
         //     Thread::whereIn('conversation_id', $slice_ids)->delete();

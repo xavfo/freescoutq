@@ -64,7 +64,7 @@ class ConversationsController extends Controller
             $mark_read_result = $user->unreadNotifications()->where('id', $request->mark_as_read)->update(['read_at' => now()]);
             $user->clearWebsiteNotificationsCache();
         } else {
-            $mark_read_result = $user->unreadNotifications()->where('data', 'like', '%"conversation_id":'.$conversation->id.'%')->update(['read_at' => now()]);
+            $mark_read_result = $user->unreadNotifications()->where('data', 'like', '%"conversation_id":' . $conversation->id . '%')->update(['read_at' => now()]);
         }
         if ($mark_read_result) {
             $user->clearWebsiteNotificationsCache();
@@ -159,7 +159,8 @@ class ConversationsController extends Controller
         // 1. Email has been received from a customer.
         // 2. Customer has been changed.
         // 3. Reply has been sent to the original customer email.
-        if ($conversation->customer_email 
+        if (
+            $conversation->customer_email
             && count($customer_emails)
             && !in_array($conversation->customer_email, $customer_emails->pluck('email')->toArray())
         ) {
@@ -222,13 +223,13 @@ class ConversationsController extends Controller
         $prev_conversations = [];
         if ($customer) {
             $prev_conversations = $mailbox->conversations()
-                                    ->where('customer_id', $customer->id)
-                                    ->where('id', '<>', $conversation->id)
-                                    ->where('status', '!=', Conversation::STATUS_SPAM)
-                                    ->where('state', Conversation::STATE_PUBLISHED)
-                                    //->limit(self::PREV_CONVERSATIONS_LIMIT)
-                                    ->orderBy('created_at', 'desc')
-                                    ->paginate(self::PREV_CONVERSATIONS_LIMIT);
+                ->where('customer_id', $customer->id)
+                ->where('id', '<>', $conversation->id)
+                ->where('status', '!=', Conversation::STATUS_SPAM)
+                ->where('state', Conversation::STATE_PUBLISHED)
+                //->limit(self::PREV_CONVERSATIONS_LIMIT)
+                ->orderBy('created_at', 'desc')
+                ->paginate(self::PREV_CONVERSATIONS_LIMIT);
         }
 
         $template = 'conversations/view';
@@ -480,18 +481,18 @@ class ConversationsController extends Controller
 
         if (!empty($from_thread_id)) {
             $orig_thread = Thread::find($from_thread_id);
-            
+
             if ($orig_thread) {
                 $orign_conv = $orig_thread->conversation;
                 $this->authorize('view', $orign_conv);
 
 
-		        // $thread = $orig_thread->replicate();
-		        // $thread->id = '';
-		        // $thread->message_id .= ".clone".crc32(mktime());
-		        // $thread->status = Thread::STATUS_ACTIVE;
-		        // $thread->conversation_id = $conversation->id;
-		        // $thread->save();
+                // $thread = $orig_thread->replicate();
+                // $thread->id = '';
+                // $thread->message_id .= ".clone".crc32(mktime());
+                // $thread->status = Thread::STATUS_ACTIVE;
+                // $thread->conversation_id = $conversation->id;
+                // $thread->save();
 
 
                 $now = date('Y-m-d H:i:s');
@@ -514,8 +515,9 @@ class ConversationsController extends Controller
                 $conversation->user_id = $orign_conv->user_id;
                 $conversation->updateFolder();
                 $conversation->save();
-                
-                $thread = Thread::createExtended([
+
+                $thread = Thread::createExtended(
+                    [
                         'conversation_id' => $orig_thread->conversation_id,
                         'user_id' => $orig_thread->user_id,
                         'type' => $orig_thread->type,
@@ -529,7 +531,7 @@ class ConversationsController extends Controller
                         'bcc' => $orig_thread->getBccArray(),
                         //'attachments' => $attachments,
                         'has_attachments' => $orig_thread->has_attachments,
-                        'message_id' => "clone".crc32(microtime()).'-'.$orig_thread->message_id,
+                        'message_id' => "clone" . crc32(microtime()) . '-' . $orig_thread->message_id,
                         'source_via' => $orig_thread->source_via,
                         'source_type' => $orig_thread->source_type,
                         'customer_id' => $orig_thread->customer_id,
@@ -537,7 +539,7 @@ class ConversationsController extends Controller
                     ],
                     $conversation
                 );
-                
+
                 // Clone attachments.
                 $attachments = Attachment::where('thread_id', $orig_thread->id)->get();
                 foreach ($attachments as $attachment) {
@@ -621,7 +623,7 @@ class ConversationsController extends Controller
                     // Flash
                     $flash_message = __('Assignee updated');
                     if (!$redirect_same_page || $response['redirect_url'] != $conversation->url()) {
-                        $flash_message .= ' &nbsp;<a href="'.$conversation->url().'">'.__('View').'</a>';
+                        $flash_message .= ' &nbsp;<a href="' . $conversation->url() . '">' . __('View') . '</a>';
                     }
                     \Session::flash('flash_success_floating', $flash_message);
 
@@ -679,7 +681,7 @@ class ConversationsController extends Controller
                     // Flash
                     $flash_message = __('Status updated');
                     if (!$redirect_same_page || $response['redirect_url'] != $conversation->url()) {
-                        $flash_message .= ' &nbsp;<a href="'.$conversation->url().'">'.__('View').'</a>';
+                        $flash_message .= ' &nbsp;<a href="' . $conversation->url() . '">' . __('View') . '</a>';
                     }
                     \Session::flash('flash_success_floating', $flash_message);
 
@@ -731,6 +733,11 @@ class ConversationsController extends Controller
                     $is_custom = true;
                 }
 
+                $is_whatsapp = false;
+                if ($type == Conversation::TYPE_WHATSAPP) {
+                    $is_whatsapp = true;
+                }
+
                 $is_create = false;
                 if (!empty($request->is_create)) {
                     //if ($new || ($from_draft && $conversation->threads_count == 1)) {
@@ -750,7 +757,7 @@ class ConversationsController extends Controller
                 // If reply is being created from draft, there is already thread created
                 $thread = null;
                 $from_draft = false;
-                if (( ! $is_note || $is_phone || $is_custom ) && ! $response['msg'] && ! empty($request->thread_id)) {
+                if ((! $is_note || $is_phone || $is_custom) && ! $response['msg'] && ! empty($request->thread_id)) {
                     $thread = Thread::find($request->thread_id);
                     if ($thread && (!$conversation || $thread->conversation_id != $conversation->id)) {
                         $response['msg'] = __('Incorrect thread');
@@ -776,8 +783,9 @@ class ConversationsController extends Controller
                                 'cc'       => 'nullable|array',
                                 'bcc'      => 'nullable|array',
                             ]);
-                        } elseif ($type === Conversation::TYPE_PHONE) {
-                            // Phone conversation.
+                        } elseif ($type === Conversation::TYPE_PHONE || $type === Conversation::TYPE_WHATSAPP) {
+                            // Phone and WhatsApp conversations are identified by the
+                            // customer name and phone number, not by an email address.
                             $validator = Validator::make($request->all(), [
                                 'name'     => 'required|string',
                                 'subject'  => 'required|string|max:998',
@@ -804,7 +812,7 @@ class ConversationsController extends Controller
                     if ($validator->fails()) {
                         foreach ($validator->errors()->getMessages() as $errors) {
                             foreach ($errors as $field => $message) {
-                                $response['msg'] .= $message.' ';
+                                $response['msg'] .= $message . ' ';
                             }
                         }
                     }
@@ -825,7 +833,9 @@ class ConversationsController extends Controller
                     $to_array = Conversation::sanitizeEmails($request->to);
                 }
                 // Check To
-                if (! $response['msg'] && $new && ! $is_phone && ! $is_custom) {
+                // WhatsApp conversations are identified by the customer phone
+                // number, so they do not require an email recipient.
+                if (! $response['msg'] && $new && ! $is_phone && ! $is_custom && ! $is_whatsapp) {
                     if (!$to_array) {
                         $response['msg'] .= __('Incorrect recipients');
                     }
@@ -850,8 +860,8 @@ class ConversationsController extends Controller
                             }
                         }
 
-                        if ($message_size > $max_message_size*1024*1024) {
-                            $response['msg'] = __('Message is too large — :info. Please shorten your message or remove some attachments.', ['info' => __('Max. Message Size').': '.$max_message_size.' MB']);
+                        if ($message_size > $max_message_size * 1024 * 1024) {
+                            $response['msg'] = __('Message is too large — :info. Please shorten your message or remove some attachments.', ['info' => __('Max. Message Size') . ': ' . $max_message_size . ' MB']);
                         }
                     }
                 }
@@ -905,7 +915,8 @@ class ConversationsController extends Controller
                             $conversation->type = $type;
                         }
                         // Allow to convert phone conversations into email conversations.
-                        if ($conversation->isPhone() && !$is_note && $conversation->customer
+                        if (
+                            $conversation->isPhone() && !$is_note && $conversation->customer
                             && $customer_email = $conversation->customer->getMainEmail()
                         ) {
                             $conversation->type = Conversation::TYPE_EMAIL;
@@ -922,8 +933,8 @@ class ConversationsController extends Controller
                     $customer_email = '';
                     $customer = null;
 
-                    if ($is_phone && $is_create) {
-                        // Phone.
+                    if (($is_phone || $is_whatsapp) && $is_create) {
+                        // Phone / WhatsApp.
                         $phone_customer_data = $this->processPhoneCustomer($request, $user);
 
                         if (!empty($phone_customer_data['msg'])) {
@@ -942,7 +953,8 @@ class ConversationsController extends Controller
                         // Email or reply to a phone conversation.
                         if (!empty($to_array)) {
                             $customer_email = $to_array[0];
-                        } elseif (!$conversation->customer_email
+                        } elseif (
+                            !$conversation->customer_email
                             && ($conversation->isEmail() || $conversation->isPhone())
                             && $conversation->customer_id
                             && $conversation->customer
@@ -1135,7 +1147,7 @@ class ConversationsController extends Controller
                             // Reload customer object, otherwise it stores previous customer.
                             $forwarded_conversation->load('customer');
                             $forwarded_conversation->customer_email = $recipient_email;
-                            $forwarded_conversation->subject = 'Fwd: '.$forwarded_conversation->subject;
+                            $forwarded_conversation->subject = 'Fwd: ' . $forwarded_conversation->subject;
                             //$forwarded_conversation->setCc(array_merge(Conversation::sanitizeEmails($request->cc), [$to]));
                             $forwarded_conversation->setCc(Conversation::sanitizeEmails($request->cc));
                             $forwarded_conversation->setBcc($request->bcc);
@@ -1244,7 +1256,8 @@ class ConversationsController extends Controller
                     }
 
                     // Follow conversation if it's assigned to someone else.
-                    if (!$is_create && !$new && !$is_forward && !$is_note
+                    if (
+                        !$is_create && !$new && !$is_forward && !$is_note
                         && $conversation->user_id != $user->id
                     ) {
                         $user->followConversation($conversation->id);
@@ -1355,14 +1368,21 @@ class ConversationsController extends Controller
                         $show_view_link = false;
                     }
 
-                    $flash_vars = ['%tag_start%' => '<strong>', '%tag_end%' => '</strong>', '%view_start%' => '&nbsp;<a href="'.$conversation->url().'">', '%a_end%' => '</a>&nbsp;', '%undo_start%' => '&nbsp;<a href="'.route('conversations.undo', ['thread_id' => $thread->id]).'" class="text-danger">'];
+                    $flash_vars = ['%tag_start%' => '<strong>', '%tag_end%' => '</strong>', '%view_start%' => '&nbsp;<a href="' . $conversation->url() . '">', '%a_end%' => '</a>&nbsp;', '%undo_start%' => '&nbsp;<a href="' . route('conversations.undo', ['thread_id' => $thread->id]) . '" class="text-danger">'];
 
                     if ($is_phone) {
                         $flash_type = 'warning';
                         if ($show_view_link) {
                             $flash_text = __(':%tag_start%Conversation created:%tag_end% :%view_start%View:%a_end% or :%undo_start%Undo:%a_end%', $flash_vars);
                         } else {
-                            $flash_text = '<strong>'.__('Conversation created').'</strong>';
+                            $flash_text = '<strong>' . __('Conversation created') . '</strong>';
+                        }
+                    } elseif ($is_whatsapp) {
+                        $flash_type = 'success';
+                        if ($show_view_link) {
+                            $flash_text = __(':%tag_start%WhatsApp: message sent:%tag_end% :%view_start%View:%a_end% or :%undo_start%Undo:%a_end%', $flash_vars);
+                        } else {
+                            $flash_text = '<strong>' . __('WhatsApp: message sent') . '</strong>';
                         }
                     } elseif ($is_custom) {
                         $flash_type = 'warning';
@@ -1370,14 +1390,14 @@ class ConversationsController extends Controller
                         if ($show_view_link) {
                             $flash_text = __(':%tag_start%' . $identifier . ' added:%tag_end% :%view_start%View:%a_end%', $flash_vars);
                         } else {
-                            $flash_text = '<strong>'.__('%identifier% added', ['%identifier%' => $identifier]).'</strong>';
+                            $flash_text = '<strong>' . __('%identifier% added', ['%identifier%' => $identifier]) . '</strong>';
                         }
                     } elseif ($is_note) {
                         $flash_type = 'warning';
                         if ($show_view_link) {
                             $flash_text = __(':%tag_start%Note added:%tag_end% :%view_start%View:%a_end%', $flash_vars);
                         } else {
-                            $flash_text = '<strong>'.__('Note added').'</strong>';
+                            $flash_text = '<strong>' . __('Note added') . '</strong>';
                         }
                     } else {
                         $flash_type = 'success';
@@ -1389,7 +1409,7 @@ class ConversationsController extends Controller
                     }
 
                     if ($can_undo) {
-                        \Session::flash('flash_'.$flash_type.'_floating', $flash_text);
+                        \Session::flash('flash_' . $flash_type . '_floating', $flash_text);
                     }
                 }
                 break;
@@ -1448,7 +1468,8 @@ class ConversationsController extends Controller
                     // Check if the last thread has same content as the new one.
                     $last_thread = $conversation->getLastThread([Thread::TYPE_MESSAGE, Thread::TYPE_NOTE]);
 
-                    if ($last_thread
+                    if (
+                        $last_thread
                         && $last_thread->created_by_user_id == $user->id
                         && $last_thread->body == $request->body
                     ) {
@@ -1484,8 +1505,8 @@ class ConversationsController extends Controller
                             $type = (int)$request->type;
                         }
 
-                        if ($type == Conversation::TYPE_PHONE) {
-                            // Phone.
+                        if ($type == Conversation::TYPE_PHONE || $type == Conversation::TYPE_WHATSAPP) {
+                            // Phone / WhatsApp.
                             $phone_customer_data = $this->processPhoneCustomer($request, $user);
 
                             if (!empty($phone_customer_data['msg'])) {
@@ -1509,7 +1530,7 @@ class ConversationsController extends Controller
                                     // In customer_email temporary store a list of customer emails.
                                     //$customer_email = implode(',', $to_array);
                                     $to = $to_array;
-                                    
+
                                     // Keep $customer as null.
                                     // When conversation will be sent, separate conversation
                                     // will be created for each customer.
@@ -2169,7 +2190,9 @@ class ConversationsController extends Controller
                     return \Response::json($response);
                 }
 
-                $response = \Eventy::filter('conversations.empty_folder', $response, 
+                $response = \Eventy::filter(
+                    'conversations.empty_folder',
+                    $response,
                     $request->mailbox_id,
                     $request->folder_id
                 );
@@ -2257,7 +2280,7 @@ class ConversationsController extends Controller
                 }
 
                 if (!empty($request->merge_conversation_id) && is_array($request->merge_conversation_id)) {
-                    
+
                     $sigle_conv = count($request->merge_conversation_id) == 1;
 
                     foreach ($request->merge_conversation_id as $merge_conversation_id) {
@@ -2272,7 +2295,7 @@ class ConversationsController extends Controller
                             }
                         }
                         if (!$response['msg'] && !$user->can('view', $merge_conversation)) {
-                            $response['msg'] = __('Not enough permissions').': #'.$merge_conversation->number;
+                            $response['msg'] = __('Not enough permissions') . ': #' . $merge_conversation->number;
                             if ($sigle_conv) {
                                 break;
                             }
@@ -2360,8 +2383,8 @@ class ConversationsController extends Controller
 
                 if (!$response['msg']) {
                     $response['html'] = \View::make('conversations/partials/merge_search_result')->with([
-                            'conversation' => $conversation,
-                        ])->render();
+                        'conversation' => $conversation,
+                    ])->render();
                     $response['status'] = 'success';
                 }
 
@@ -2378,9 +2401,9 @@ class ConversationsController extends Controller
 
                 if (!$response['msg']) {
                     $response['html'] = \View::make('mailboxes/partials/chat_list')->with([
-                            'mailbox' => $mailbox,
-                            'offset' => $request->offset,
-                        ])->render();
+                        'mailbox' => $mailbox,
+                        'offset' => $request->offset,
+                    ])->render();
                     $response['status'] = 'success';
                 }
                 break;
@@ -2438,9 +2461,9 @@ class ConversationsController extends Controller
                     }
 
                     $response['html'] = \View::make('conversations/partials/customer_sidebar')->with([
-                            'customer' => $customer,
-                            'prev_conversations' => $prev_conversations,
-                        ])->render();
+                        'customer' => $customer,
+                        'prev_conversations' => $prev_conversations,
+                    ])->render();
                     $response['status'] = 'success';
                 } else {
                     $response['msg'] = 'Customer not found';
@@ -2648,12 +2671,12 @@ class ConversationsController extends Controller
 
         if ($conversation->customer_id) {
             $prev_conversations = $conversation->mailbox->conversations()
-                                    ->where('customer_id', $conversation->customer_id)
-                                    ->where('id', '<>', $conversation->id)
-                                    ->where('status', '!=', Conversation::STATUS_SPAM)
-                                    ->where('state', Conversation::STATE_PUBLISHED)
-                                    ->orderBy('created_at', 'desc')
-                                    ->paginate(500);
+                ->where('customer_id', $conversation->customer_id)
+                ->where('id', '<>', $conversation->id)
+                ->where('status', '!=', Conversation::STATUS_SPAM)
+                ->where('state', Conversation::STATE_PUBLISHED)
+                ->orderBy('created_at', 'desc')
+                ->paginate(500);
         }
 
         return view('conversations/ajax_html/merge_conv', [
@@ -2927,7 +2950,8 @@ class ConversationsController extends Controller
         }
 
         // Jump to the conversation if searching by conversation number.
-        if (count($conversations) == 1 
+        if (
+            count($conversations) == 1
             && ($conversations[0]->number == $q || $conversations[0]->number == ltrim($q, '#'))
             && empty($filters)
             && !$request->x_embed
@@ -2947,10 +2971,10 @@ class ConversationsController extends Controller
             $filters_list = \Eventy::filter('search.filters_list_customers', Customer::$search_filters, $mode, $filters, $q);
         }
 
-        $mailboxes = \Cache::remember('search_filter_mailboxes_'.$user->id, 5, function () use ($user) {
+        $mailboxes = \Cache::remember('search_filter_mailboxes_' . $user->id, 5, function () use ($user) {
             return $user->mailboxesCanView();
         });
-        $users = \Cache::remember('search_filter_users_'.$user->id, 5, function () use ($user, $mailboxes) {
+        $users = \Cache::remember('search_filter_users_' . $user->id, 5, function () use ($user, $mailboxes) {
             return \Eventy::filter('search.assignees', $user->whichUsersCanView($mailboxes), $user, $mailboxes);
         });
         $search_mailbox = null;
@@ -3071,7 +3095,7 @@ class ConversationsController extends Controller
         $q = $this->getSearchQuery($request);
 
         // Like is case insensitive.
-        $like = '%'.mb_strtolower($q).'%';
+        $like = '%' . mb_strtolower($q) . '%';
 
         // We need to use aggregate function for email to avoid "Grouping error" error in PostgreSQL.
         $query_customers = Customer::select(['customers.*', \DB::raw('MAX(emails.email)')])
@@ -3101,7 +3125,7 @@ class ConversationsController extends Controller
                 $phone_numeric = \Helper::phoneToNumeric($q);
 
                 if ($phone_numeric) {
-                    $query->orWhere('customers.phones', $like_op, '%"'.$phone_numeric.'"%');
+                    $query->orWhere('customers.phones', $like_op, '%"' . $phone_numeric . '"%');
                 }
             });
 
@@ -3205,7 +3229,8 @@ class ConversationsController extends Controller
             }
             $attachments_to_remove = array_diff($attachments_all, $attachments);
             $attachments_to_remove = array_diff($attachments_to_remove, $embeds);
-            if (count($attachments) 
+            if (
+                count($attachments)
                 && count($attachments) != count($embeds)
             ) {
                 $has_attachments = true;

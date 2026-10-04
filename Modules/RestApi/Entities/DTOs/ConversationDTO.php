@@ -3,6 +3,7 @@
 namespace Modules\RestApi\Entities\DTOs;
 
 use App\Conversation;
+use Modules\RestApi\Support\Channels;
 
 class ConversationDTO
 {
@@ -16,6 +17,8 @@ class ConversationDTO
     public $status_name;
     public $state;
     public $type;
+    public $type_name;
+    public $channel;
     public $threads_count;
     public $assignee_id;
     public $assignee_name;
@@ -40,6 +43,8 @@ class ConversationDTO
         $instance->status_name = self::getStatusName($conversation->status);
         $instance->state = $conversation->state;
         $instance->type = $conversation->type;
+        $instance->type_name = Conversation::typeToName($conversation->type);
+        $instance->channel = Channels::name($conversation->type);
         $instance->threads_count = $conversation->threads_count ?? 0;
         $instance->assignee_id = $conversation->user_id;
         $instance->assignee_name = $conversation->user ? $conversation->user->getFullName() : null;
@@ -69,6 +74,8 @@ class ConversationDTO
             'status_name' => $this->status_name,
             'state' => $this->state,
             'type' => $this->type,
+            'type_name' => $this->type_name,
+            'channel' => $this->channel,
             'threads_count' => $this->threads_count,
             'assignee' => [
                 'id' => $this->assignee_id,

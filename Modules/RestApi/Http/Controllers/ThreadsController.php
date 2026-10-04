@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\RestApi\Entities\DTOs\ThreadDTO;
 use Modules\RestApi\Http\Requests\StoreThreadRequest;
+use Modules\RestApi\Support\Channels;
 use Modules\RestApi\Support\LogsApiAudit;
 use Modules\RestApi\Support\MailboxAccess;
 
@@ -118,14 +119,49 @@ class ThreadsController extends Controller
             ], 403);
         }
 
+        // The medium is defined by the conversation itself.
+        $type = (int) $conversation->type;
+        $threadType = (int) $request->input('type', Thread::TYPE_MESSAGE);
+
+        // Notes are internal and are never delivered. For deliverable channels
+        // (email / WhatsApp) the reply is sent by default when the caller does
+        // not specify it explicitly.
+        $send = $threadType === Thread::TYPE_MESSAGE && Channels::shouldSend($request, $type);
+
+        $mailbox = Mailbox::find($conversation->mailbox_id);
+
+        if ($send && Channels::isDeliverable($type)) {
+            if (!$mailbox) {
+                return response()->json([
+                    'message' => 'Mailbox not found',
+                    'status_code' => 404,
+                ], 404);
+            }
+
+            // Fail fast with a clear error instead of queueing a message that
+            // can never be delivered (mailbox without WhatsApp/SMTP config).
+            $check = Channels::check($mailbox, $type);
+            if (!$check['ok']) {
+                return Channels::errorResponse($check['error'], $check['message']);
+            }
+        }
+
         try {
-            $mailbox = Mailbox::find($conversation->mailbox_id);
             $customer = $conversation->customer;
+
+            // Recipient: the phone for phone / WhatsApp conversations, the
+            // main email otherwise.
+            $recipient = '';
+            if ($customer) {
+                $recipient = Channels::requiresPhone($type)
+                    ? $customer->getMainPhoneNumber()
+                    : $customer->getMainEmail();
+            }
 
             // Thread is guarded, so it must be built through Thread::create().
             $thread = Thread::create(
                 $conversation,
-                (int) $request->input('type', Thread::TYPE_MESSAGE),
+                $threadType,
                 $request->input('body'),
                 [
                     'user_id' => $userId ? (int) $userId : $conversation->user_id,
@@ -134,15 +170,20 @@ class ThreadsController extends Controller
                     'source_via' => Thread::PERSON_USER,
                     'source_type' => Thread::SOURCE_TYPE_API,
                     'from' => $mailbox ? $mailbox->name . ' <' . $mailbox->email . '>' : '',
-                    'to' => $customer ? $customer->getMainEmail() : '',
+                    'to' => $recipient,
                     'cc' => Conversation::sanitizeEmails($request->input('cc', [])),
                     'bcc' => Conversation::sanitizeEmails($request->input('bcc', [])),
                 ]
             );
 
+            $queued = Channels::queueDelivery($conversation, $thread, $send);
+
             $this->logAudit($request, 'thread_created', $thread->id, 201);
 
-            return response()->json(ThreadDTO::fromModel($thread)->toArray(), 201);
+            $response = ThreadDTO::fromModel($thread)->toArray();
+            $response['delivery'] = Channels::deliveryInfo($type, $queued);
+
+            return response()->json($response, 201);
         } catch (\Exception $e) {
             \Log::error('RestApi: error creating thread: ' . $e->getMessage());
 
