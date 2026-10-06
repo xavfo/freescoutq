@@ -174,8 +174,13 @@ Modules/Kanban/
 ├── Database/Migrations/        conversations.kanban_stage
 ├── Resources/views/            index, settings, no-mailboxes y partials
 ├── Resources/lang/{es,en}/     textos
-└── Public/{css,js}             kanban.css, kanban.js (se sirven por el enlace /modules/kanban)
+└── Public/                     css/, js/ y img/icon.png (se sirven por el enlace /modules/kanban)
 ```
+
+El icono de la tarjeta del módulo (`Public/img/icon.png`, 256×256 con esquinas transparentes) se
+genera con `php tools/make-module-icons.php`, que rehace también el de RestApi. No necesita GD:
+dibuja con distancias con signo y escribe el PNG con zlib. Es determinista, así que reejecutarlo no
+cambia los ficheros. La ruta que muestra la tarjeta sale de la clave `img` de `module.json`.
 
 ---
 
