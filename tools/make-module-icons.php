@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Generador de los iconos de los modulos (Modules/<Name>/Public/img/icon.png).
  *
@@ -165,18 +166,18 @@ function writePng($target, $pixels)
             $pixel = $pixels[$y][$x];
             $raw .= $pixel === null
                 ? "\x00\x00\x00\x00"                                     // fuera: transparente puro
-                : chr($pixel[0]).chr($pixel[1]).chr($pixel[2]).chr($pixel[3]);
+                : chr($pixel[0]) . chr($pixel[1]) . chr($pixel[2]) . chr($pixel[3]);
         }
     }
 
     $chunk = function ($type, $data) {
-        return pack('N', strlen($data)).$type.$data.pack('N', crc32($type.$data));
+        return pack('N', strlen($data)) . $type . $data . pack('N', crc32($type . $data));
     };
 
     $png = "\x89PNG\r\n\x1a\n"
-        .$chunk('IHDR', pack('NNCCCCC', SIZE, SIZE, 8, 6, 0, 0, 0))
-        .$chunk('IDAT', gzcompress($raw, 9))    // zlib, que es justo lo que espera IDAT
-        .$chunk('IEND', '');
+        . $chunk('IHDR', pack('NNCCCCC', SIZE, SIZE, 8, 6, 0, 0, 0))
+        . $chunk('IDAT', gzcompress($raw, 9))    // zlib, que es justo lo que espera IDAT
+        . $chunk('IEND', '');
 
     if (!is_dir(dirname($target))) {
         mkdir(dirname($target), 0777, true);
@@ -184,10 +185,11 @@ function writePng($target, $pixels)
     file_put_contents($target, $png);
 
     $info = @getimagesizefromstring($png);
-    printf("  %-46s %6d bytes  %s\n",
-        str_replace(dirname(__DIR__).DIRECTORY_SEPARATOR, '', $target),
+    printf(
+        "  %-46s %6d bytes  %s\n",
+        str_replace(dirname(__DIR__) . DIRECTORY_SEPARATOR, '', $target),
         strlen($png),
-        $info ? $info[0].'x'.$info[1].' '.$info['mime'] : 'PNG INVALIDO'
+        $info ? $info[0] . 'x' . $info[1] . ' ' . $info['mime'] : 'PNG INVALIDO'
     );
 }
 
@@ -287,23 +289,23 @@ $icons = [
     'kanban'  => ['Modules/Kanban/Public/img/icon.png',  '#4527a0', '#7b1fa2', 'kanbanLayers'],
 ];
 
-echo "Generando iconos de modulo (".SIZE."x".SIZE.", RGBA, esquinas transparentes)\n";
+echo "Generando iconos de modulo (" . SIZE . "x" . SIZE . ", RGBA, esquinas transparentes)\n";
 
 $missing_links = [];
 foreach ($icons as $alias => $icon) {
     list($relative, $from, $to, $builder) = $icon;
 
-    writePng($root.'/'.$relative, render($from, $to, $builder));
+    writePng($root . '/' . $relative, render($from, $to, $builder));
 
     // La tarjeta pide /modules/<alias>/<fichero>: sin el enlace public/modules/<alias> da 404.
-    if (!file_exists($root.'/public/modules/'.$alias)) {
+    if (!file_exists($root . '/public/modules/' . $alias)) {
         $missing_links[] = $alias;
     }
 }
 
 echo "\n";
 if ($missing_links) {
-    echo "AVISO: falta el enlace public/modules/".implode(" y public/modules/", $missing_links).".\n";
+    echo "AVISO: falta el enlace public/modules/" . implode(" y public/modules/", $missing_links) . ".\n";
     echo "       Sin el, la tarjeta del modulo muestra la imagen rota (el modulo lo sirve\n";
     echo "       Modules/<Name>/Public, no public/). Solucion:\n";
     echo "  - Linux:  php artisan freescout:module-install <alias>\n";
