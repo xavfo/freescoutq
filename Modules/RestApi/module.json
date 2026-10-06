@@ -9,6 +9,7 @@
   "requiredAppVersion": "1.0.2",
   "license": "AGPL-3.0",
   "keywords": ["api", "rest", "tickets", "conversations"],
+  "img": "/modules/restapi/img/icon.png",
   "active": 1,
   "order": 20,
   "providers": [
