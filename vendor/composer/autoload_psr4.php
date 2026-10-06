@@ -8,9 +8,6 @@ $baseDir = dirname($vendorDir);
 return array(
     'enshrined\\svgSanitize\\' => array($vendorDir . '/enshrined/svg-sanitize/src'),
     'XdgBaseDir\\' => array($vendorDir . '/dnoegel/php-xdg-base-dir/src'),
-    'Whoops\\Util\\' => array($baseDir . '/overrides/filp/whoops/src/Whoops/Util'),
-    'Whoops\\Handler\\' => array($baseDir . '/overrides/filp/whoops/src/Whoops/Handler'),
-    'Whoops\\' => array($baseDir . '/overrides/filp/whoops/src/Whoops'),
     'Webklex\\PHPIMAP\\' => array($baseDir . '/overrides/webklex/php-imap/src', $vendorDir . '/webklex/php-imap/src'),
     'Watson\\Rememberable\\' => array($vendorDir . '/watson/rememberable/src'),
     'Underscore\\' => array($vendorDir . '/anahkiasen/underscore-php/src', $vendorDir . '/anahkiasen/underscore-php/tests'),
