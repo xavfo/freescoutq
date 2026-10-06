@@ -9,6 +9,7 @@
   "requiredAppVersion": "1.8.0",
   "license": "AGPL-3.0",
   "keywords": ["kanban", "board", "conversations", "tickets"],
+  "img": "/modules/kanban/img/icon.png",
   "active": 1,
   "order": 21,
   "providers": [
