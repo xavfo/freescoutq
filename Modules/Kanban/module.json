@@ -1,0 +1,19 @@
+{
+  "name": "Kanban",
+  "alias": "kanban",
+  "description": "Tablero Kanban de conversaciones abiertas con fases configurables por buzón",
+  "version": "1.0.0",
+  "detailsUrl": "https://www.qsoftware.biz",
+  "author": "qsoftware.biz",
+  "authorUrl": "https://www.qsoftware.biz",
+  "requiredAppVersion": "1.8.0",
+  "license": "AGPL-3.0",
+  "keywords": ["kanban", "board", "conversations", "tickets"],
+  "active": 1,
+  "order": 21,
+  "providers": [
+    "Modules\\Kanban\\Providers\\KanbanServiceProvider"
+  ],
+  "aliases": {},
+  "requires": []
+}

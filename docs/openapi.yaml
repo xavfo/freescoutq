@@ -9,7 +9,7 @@ info:
     restringidos por medio; solo por buzón (`mailbox_ids`).
 
     Guía de integración: `docs/qchat-integration.md`.
-  version: 1.0.0
+  version: 1.5.0
 servers:
   - url: https://tickets.qsoftware.biz/api/v1
     description: Producción

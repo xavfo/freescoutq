@@ -7,7 +7,6 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'enshrined\\svgSanitize\\' => array($vendorDir . '/enshrined/svg-sanitize/src'),
-    'Modules\\RestApi\\' => array($baseDir . '/Modules/RestApi'),
     'XdgBaseDir\\' => array($vendorDir . '/dnoegel/php-xdg-base-dir/src'),
     'Whoops\\Util\\' => array($baseDir . '/overrides/filp/whoops/src/Whoops/Util'),
     'Whoops\\Handler\\' => array($baseDir . '/overrides/filp/whoops/src/Whoops/Handler'),
@@ -81,6 +80,8 @@ return array(
     'PHPUnit\\Runner\\' => array($baseDir . '/overrides/phpunit/phpunit/src/Runner'),
     'Nwidart\\Modules\\' => array($baseDir . '/overrides/nwidart/laravel-modules/src', $vendorDir . '/nwidart/laravel-modules/src'),
     'Monolog\\' => array($vendorDir . '/monolog/monolog/src/Monolog'),
+    'Modules\\RestApi\\' => array($baseDir . '/Modules/RestApi'),
+    'Modules\\Kanban\\' => array($baseDir . '/Modules/Kanban'),
     'Mews\\Purifier\\' => array($baseDir . '/overrides/mews/purifier/src', $vendorDir . '/mews/purifier/src'),
     'Lord\\Laroute\\Routes\\' => array($baseDir . '/overrides/lord/laroute/src/Routes'),
     'Lord\\Laroute\\' => array($vendorDir . '/lord/laroute/src'),

@@ -27,6 +27,27 @@ class RestApiServiceProvider extends ServiceProvider
     }
 
     /**
+     * Module version.
+     *
+     * Single source of truth: Modules/RestApi/module.json. FreeScout reads the
+     * same file to display the version in the Modules page, so bumping it
+     * there keeps every consumer in sync.
+     *
+     * @return string
+     */
+    public static function moduleVersion()
+    {
+        static $version = null;
+
+        if ($version === null) {
+            $manifest = @json_decode(@file_get_contents(__DIR__ . '/../module.json'), true);
+            $version = $manifest['version'] ?? '0.0.0';
+        }
+
+        return $version;
+    }
+
+    /**
      * Boot the application events.
      */
     public function boot()

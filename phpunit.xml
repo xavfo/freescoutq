@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" bootstrap="vendor/autoload.php" colors="true" processIsolation="false" stopOnFailure="false" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.2/phpunit.xsd">
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" bootstrap="tests/bootstrap.php" colors="true" processIsolation="false" stopOnFailure="false" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.2/phpunit.xsd">
   <testsuites>
     <testsuite name="Feature">
       <directory suffix="Test.php">./tests/Feature</directory>
@@ -10,6 +10,9 @@
     <testsuite name="RestApi">
       <directory suffix="Test.php">./Modules/RestApi/Tests</directory>
     </testsuite>
+    <testsuite name="Kanban">
+      <directory suffix="Test.php">./Modules/Kanban/Tests</directory>
+    </testsuite>
   </testsuites>
   <php>
     <env name="APP_ENV" value="testing"/>
@@ -17,7 +20,9 @@
     <env name="CACHE_DRIVER" value="array"/>
     <env name="SESSION_DRIVER" value="array"/>
     <env name="QUEUE_DRIVER" value="sync"/>
-    <env name="APP_KEY" value="value_from_phpunit"/>
+    <!-- Clave válida (base64 de 32 bytes): con una clave inválida, el cifrado de
+         la cookie de sesión revienta y las pruebas HTTP no pueden ni ejecutarse. -->
+    <env name="APP_KEY" value="base64:2fl+Ktvkfl+Fuz4Qp/A75G2RTiWVA/ZoKZvp6fiiM10="/>
   </php>
   <coverage>
     <include>

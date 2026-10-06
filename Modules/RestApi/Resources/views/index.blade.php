@@ -23,7 +23,9 @@
                     </ul>
                     <p>Para comenzar, haga clic en <strong>System → API Tokens</strong> en el menú de navegación.</p>
                 </div>
-                ver 1.0.0
+                <div class="card-footer text-muted">
+                    RestApi v{{ \Modules\RestApi\Providers\RestApiServiceProvider::moduleVersion() }}
+                </div>
             </div>
         </div>
     </div>

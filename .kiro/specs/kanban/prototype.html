@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="es">
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Kanban — prototipo (Fase 4)</title>
+        <!--
+  PROTOTIPO VISUAL — Fase 4 del módulo Kanban (.kiro/specs/kanban/).
+  Autocontenido: sin CDN, sin dependencias, sin FreeScout.
+  Replica la paleta y el lenguaje visual de FreeScout para validar el diseño
+  antes de escribir el Blade/CSS/JS definitivos.
+
+  Paleta base tomada de public/css/style.css:
+    primario #0078d7 · texto #253540 · bordes #e3e8eb · enlaces navbar #4f5d6b
+    acento  #ff9139  · gris claro #f4f5f5 · apagado #93a1af
+
+  Códigos de color:
+    · Línea izquierda de la tarjeta  -> TIPO DE MEDIO (email, WhatsApp, llamada, SMS, chat, personalizado)
+    · Cabecera y fondo de la columna -> FASE del flujo (área de color, identificable de lejos)
+-->
+        <style>
+            :root {
+                --primary: #0078d7;
+                --primary-dark: #0067b8;
+                --accent: #ff9139;
+                --text: #253540;
+                --link: #4f5d6b;
+                --muted: #93a1af;
+                --muted-2: #6b7c8c;
+                --border: #e3e8eb;
+                --border-2: #d6dde3;
+                --bg: #f4f6f8;
+                --card: #fff;
+                --radius: 3px;
+                --stroke: 5px;
+                /* línea de medio de la tarjeta */
+
+                /* --- medios (color de la línea izquierda de cada tarjeta) --- */
+                --m-email: #0078d7;
+                /* email        */
+                --m-whatsapp: #25d366;
+                /* WhatsApp     */
+                --m-phone: #e91e63;
+                /* llamada      */
+                --m-sms: #ff9800;
+                /* SMS          */
+                --m-chat: #00bcd4;
+                /* chat         */
+                --m-custom: #78909c;
+                /* personalizado*/
+            }
+
+            * {
+                box-sizing: border-box
+            }
+
+            html,
+            body {
+                margin: 0;
+                padding: 0
+            }
+
+            body {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 14px;
+                line-height: 1.45;
+                color: var(--text);
+                background: var(--bg);
+                -webkit-font-smoothing: antialiased;
+            }
+
+            a {
+                color: var(--primary);
+                text-decoration: none
+            }
+
+            a:hover {
+                text-decoration: underline
+            }
+
+            button {
+                font-family: inherit;
+                font-size: inherit;
+                cursor: pointer
+            }
+
+            /* ---------------- navbar (réplica del layout de FreeScout) --------------- */
+            .navbar {
+                background: #fff;
+                border-bottom: 1px solid var(--border);
+                height: 52px;
+                display: flex;
+                align-items: center;
+                padding: 0 16px;
+                gap: 4px;
+                position: sticky;
+                top: 0;
+                z-index: 30;
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-right: 22px;
+                font-weight: 600;
+                color: var(--primary);
+                font-size: 16px
+            }
+
+            .brand .dot {
+                width: 20px;
+                height: 20px;
+                border-radius: 4px;
+                background: var(--primary);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+                font-size: 11px;
+                font-weight: 700
+            }
+
+            .nav-item {
+                padding: 9px 12px;
+                color: var(--link);
+                border-radius: var(--radius);
+                display: flex;
+                align-items: center;
+                gap: 6px
+            }
+
+            .nav-item:hover {
+                background: #f4f5f5;
+                text-decoration: none
+            }
+
+            .nav-item.active {
+                color: var(--primary);
+                font-weight: 600;
+                background: #eaf4fd
+            }
+
+            .nav-right {
+                margin-left: auto;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                color: var(--muted-2)
+            }
+
+            .avatar {
+                width: 26px;
+                height: 26px;
+                border-radius: 50%;
+                background: #dfe7ee;
+                color: #4f5d6b;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: 700
+            }
+
+            /* ---------------- barra de filtros ------------------------------------- */
+            .board-head {
+                padding: 14px 16px 10px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                align-items: center
+            }
+
+            .board-head h1 {
+                font-size: 18px;
+                margin: 0 12px 0 0;
+                font-weight: 600
+            }
+
+            .ctrl {
+                height: 30px;
+                border: 1px solid var(--border-2);
+                background: #fff;
+                border-radius: var(--radius);
+                padding: 0 8px;
+                color: var(--text);
+                font-size: 13px
+            }
+
+            .ctrl:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 2px #0078d722
+            }
+
+            .search {
+                min-width: 230px
+            }
+
+            .spacer {
+                flex: 1
+            }
+
+            .btn {
+                height: 30px;
+                border: 1px solid var(--border-2);
+                background: #fff;
+                border-radius: var(--radius);
+                padding: 0 10px;
+                color: var(--link);
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 13px
+            }
+
+            .btn:hover {
+                background: #f4f5f5
+            }
+
+            .btn-primary {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #fff
+            }
+
+            .btn-primary:hover {
+                background: var(--primary-dark)
+            }
+
+            .chips {
+                display: flex;
+                gap: 6px;
+                align-items: center;
+                flex-wrap: wrap;
+                padding: 0 16px 8px
+            }
+
+            .chip {
+                font-size: 12px;
+                color: var(--muted-2);
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 2px 10px
+            }
+
+            .chip b {
+                color: var(--text)
+            }
+
+            /* ---------------- leyenda de medios ------------------------------------ */
+            .legend {
+                display: flex;
+                gap: 16px;
+                align-items: center;
+                flex-wrap: wrap;
+                padding: 0 16px 10px;
+                font-size: 12px;
+                color: var(--muted-2)
+            }
+
+            .legend .lbl {
+                font-weight: 600;
+                color: var(--muted-2)
+            }
+
+            .legend .item {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px
+            }
+
+            .legend .bar {
+                width: var(--stroke);
+                height: 15px;
+                border-radius: 2px;
+                display: inline-block
+            }
+
+            .legend .bar.m-email {
+                background: var(--m-email)
+            }
+
+            .legend .bar.m-whatsapp {
+                background: var(--m-whatsapp)
+            }
+
+            .legend .bar.m-phone {
+                background: var(--m-phone)
+            }
+
+            .legend .bar.m-sms {
+                background: var(--m-sms)
+            }
+
+            .legend .bar.m-chat {
+                background: var(--m-chat)
+            }
+
+            .legend .bar.m-custom {
+                background: var(--m-custom)
+            }
+
+            /* ---------------- tablero ---------------------------------------------- */
+            .board {
+                display: flex;
+                gap: 12px;
+                overflow-x: auto;
+                padding: 6px 16px 24px;
+                align-items: flex-start;
+                min-height: calc(100vh - 200px);
+            }
+
+            /* Cada fase define su color fuerte (--c) y su tinte de fondo (--c-soft).
+               La cabecera se pinta con --c y el cuerpo con --c-soft: eso es el
+               "área de color" que identifica la fase de un vistazo.               */
+            .col[data-stage="none"] {
+                --c: #7f8c8d;
+                --c-soft: #e9edee
+            }
+
+            .col[data-stage="new"] {
+                --c: #3498db;
+                --c-soft: #dfeefb
+            }
+
+            .col[data-stage="progress"] {
+                --c: #f39c12;
+                --c-soft: #fceaca
+            }
+
+            .col[data-stage="waiting"] {
+                --c: #9b59b6;
+                --c-soft: #f2e3f7
+            }
+
+            .col[data-stage="resolved"] {
+                --c: #27ae60;
+                --c-soft: #d9f1e4
+            }
+
+            .col {
+                flex: 0 0 300px;
+                width: 300px;
+                background: var(--c-soft);
+                border: 1px solid var(--c);
+                border-radius: var(--radius);
+                display: flex;
+                flex-direction: column;
+                max-height: calc(100vh - 210px);
+                overflow: hidden;
+            }
+
+            .col-head {
+                padding: 9px 10px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: var(--c);
+                color: #fff;
+            }
+
+            .col-title {
+                font-weight: 600;
+                font-size: 13.5px;
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                color: #fff
+            }
+
+            .swatch {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, .85);
+                flex: 0 0 auto
+            }
+
+            .count {
+                background: rgba(255, 255, 255, .28);
+                color: #fff;
+                border-radius: 10px;
+                padding: 1px 8px;
+                font-size: 11.5px;
+                font-weight: 700
+            }
+
+            .count.wip-over {
+                background: #fff;
+                color: #c0392b
+            }
+
+            .col-body {
+                padding: 0 8px 8px;
+                overflow-y: auto;
+                overflow-x: hidden;
+                min-height: 60px;
+                flex: 1;
+                background: var(--c-soft)
+            }
+
+            .col.drop {
+                outline: 3px dashed var(--c);
+                outline-offset: -4px
+            }
+
+            .col.drop .col-body {
+                background: #fff
+            }
+
+            .col-foot {
+                padding: 6px 10px;
+                font-size: 12px;
+                color: var(--muted-2);
+                border-top: 1px solid rgba(37, 53, 64, .08);
+                background: var(--c-soft)
+            }
+
+            .col-foot a {
+                font-size: 12px
+            }
+
+            .empty {
+                color: var(--muted-2);
+                font-size: 12.5px;
+                text-align: center;
+                padding: 14px 6px;
+                font-style: italic
+            }
+
+            /* ---------------- tarjeta ---------------------------------------------- */
+            .card {
+                background: var(--card);
+                border: 1px solid var(--border);
+                /* La línea izquierda la colorea el TIPO DE MEDIO (ver abajo). */
+                border-left: var(--stroke) solid var(--m-custom);
+                border-radius: var(--radius);
+                padding: 9px 10px 9px 11px;
+                margin: 8px 0;
+                cursor: grab;
+                box-shadow: 0 1px 1px rgba(37, 53, 64, .04);
+                position: relative;
+            }
+
+            .card:hover {
+                border-color: var(--border-2);
+                border-left-color: inherit;
+                box-shadow: 0 2px 6px rgba(37, 53, 64, .12)
+            }
+
+            /* Color de la línea por tipo de medio */
+            .card[data-medium="email"] {
+                border-left-color: var(--m-email)
+            }
+
+            .card[data-medium="whatsapp"] {
+                border-left-color: var(--m-whatsapp)
+            }
+
+            .card[data-medium="phone"] {
+                border-left-color: var(--m-phone)
+            }
+
+            .card[data-medium="sms"] {
+                border-left-color: var(--m-sms)
+            }
+
+            .card[data-medium="chat"] {
+                border-left-color: var(--m-chat)
+            }
+
+            .card[data-medium="custom"] {
+                border-left-color: var(--m-custom)
+            }
+
+            .card.dragging {
+                opacity: .45;
+                cursor: grabbing
+            }
+
+            .card-top {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 11.5px;
+                color: var(--muted-2)
+            }
+
+            .num {
+                font-weight: 700;
+                color: var(--muted-2)
+            }
+
+            .scenario {
+                margin-left: auto;
+                display: flex;
+                align-items: center;
+                gap: 5px
+            }
+
+            .subject {
+                font-weight: 600;
+                font-size: 13.5px;
+                margin: 4px 0 3px;
+                color: var(--text);
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden
+            }
+
+            .customer {
+                font-size: 12.5px;
+                color: var(--muted-2);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis
+            }
+
+            .card-bottom {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                row-gap: 4px;
+                flex-wrap: wrap;
+                margin-top: 8px
+            }
+
+            .meta {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 11.5px;
+                color: var(--muted);
+                white-space: nowrap
+            }
+
+            .meta.warn {
+                color: #c0392b;
+                font-weight: 600;
+                white-space: nowrap
+            }
+
+            /* píldora del tipo de medio (refuerza el color de la línea) */
+            .mid {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 10.5px;
+                font-weight: 700;
+                letter-spacing: .01em;
+                padding: 1px 7px;
+                border-radius: 9px;
+                background: #eef2f4;
+                color: var(--m-custom);
+                white-space: nowrap
+            }
+
+            .mid .d {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: currentColor
+            }
+
+            .mid[data-m="email"] {
+                color: #0067b8;
+                background: #e6f2fc
+            }
+
+            .mid[data-m="whatsapp"] {
+                color: #107c3b;
+                background: #e4f8ec
+            }
+
+            .mid[data-m="phone"] {
+                color: #c2185b;
+                background: #fdeaf2
+            }
+
+            .mid[data-m="sms"] {
+                color: #b26a00;
+                background: #fff2e2
+            }
+
+            .mid[data-m="chat"] {
+                color: #00838f;
+                background: #e0f7fa
+            }
+
+            .mid[data-m="custom"] {
+                color: #546e7a;
+                background: #eef2f4
+            }
+
+            .tag {
+                font-size: 10.5px;
+                text-transform: uppercase;
+                letter-spacing: .02em;
+                font-weight: 700;
+                padding: 1px 6px;
+                border-radius: 9px;
+                background: #eef1f4;
+                color: var(--muted-2)
+            }
+
+            .tag.pending {
+                background: #fff2e2;
+                color: #b26a00
+            }
+
+            .tag.active {
+                background: #e6f2fc;
+                color: #0067b8
+            }
+
+            .card-menu {
+                margin-left: auto;
+                border: 0;
+                background: transparent;
+                color: var(--muted);
+                padding: 0 2px;
+                border-radius: var(--radius);
+                opacity: 0;
+                transition: opacity .12s
+            }
+
+            .card:hover .card-menu {
+                opacity: 1
+            }
+
+            .card-menu:hover {
+                background: #f4f5f5;
+                color: var(--link)
+            }
+
+            /* menú desplegable de la tarjeta */
+            .menu {
+                position: absolute;
+                right: 6px;
+                top: 30px;
+                background: #fff;
+                border: 1px solid var(--border-2);
+                border-radius: var(--radius);
+                box-shadow: 0 6px 18px rgba(37, 53, 64, .16);
+                z-index: 20;
+                min-width: 168px;
+                padding: 4px 0
+            }
+
+            .menu button {
+                display: block;
+                width: 100%;
+                text-align: left;
+                border: 0;
+                background: transparent;
+                padding: 7px 12px;
+                color: var(--text);
+                font-size: 13px
+            }
+
+            .menu button:hover {
+                background: #f4f5f5
+            }
+
+            .menu .sep {
+                height: 1px;
+                background: var(--border);
+                margin: 4px 0
+            }
+
+            /* ---------------- toast + utilidades ----------------------------------- */
+            .toast {
+                position: fixed;
+                left: 50%;
+                bottom: 26px;
+                transform: translateX(-50%) translateY(16px);
+                background: #253540;
+                color: #fff;
+                padding: 9px 16px;
+                border-radius: var(--radius);
+                font-size: 13px;
+                opacity: 0;
+                pointer-events: none;
+                transition: .18s;
+                z-index: 60
+            }
+
+            .toast.show {
+                opacity: 1;
+                transform: translateX(-50%)
+            }
+
+            .toast.error {
+                background: #c0392b
+            }
+
+            .hint {
+                padding: 0 16px 12px;
+                color: var(--muted-2);
+                font-size: 12px
+            }
+
+            .sim {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 12.5px;
+                color: var(--muted-2)
+            }
+
+            svg {
+                display: block
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <!-- ═══════════ navbar (réplica de layouts/app.blade.php) ═══════════ -->
+        <div class="navbar">
+            <span class="brand"><span class="dot">Q</span> QSoft Tickets</span>
+            <a class="nav-item" href="#">Buzón <svg width="8" height="8" viewBox="0 0 8 8">
+                    <path d="M0 2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" />
+                </svg></a>
+            <a class="nav-item" href="#">Manage <svg width="8" height="8" viewBox="0 0 8 8">
+                    <path d="M0 2l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" />
+                </svg></a>
+            <a class="nav-item active" href="#">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+                    <rect x="0" y="1" width="4" height="14" rx="1" />
+                    <rect x="6" y="1" width="4" height="10" rx="1" />
+                    <rect x="12" y="1" width="4" height="6" rx="1" />
+                </svg>
+                Kanban
+            </a>
+            <span class="nav-right">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+                    <path d="M8 2a4 4 0 0 1 4 4v3l1 2H3l1-2V6a4 4 0 0 1 4-4z" />
+                    <path d="M6.5 13a1.5 1.5 0 0 0 3 0" />
+                </svg>
+                <span class="avatar">XF</span>
+            </span>
+        </div>
+
+        <!-- ═══════════ filtros ═══════════ -->
+        <div class="board-head">
+            <h1>Kanban</h1>
+            <select class="ctrl">
+                <option>Todos los buzones</option>
+                <option>Soporte</option>
+                <option>Ventas</option>
+            </select>
+            <select class="ctrl">
+                <option>Asignado: todos</option>
+                <option>Sin asignar</option>
+                <option>Xavier Freire</option>
+                <option>Ana López</option>
+            </select>
+            <select class="ctrl">
+                <option>Antigüedad: cualquiera</option>
+                <option>Sin respuesta &gt; 1 día</option>
+                <option>Sin respuesta &gt; 3 días</option>
+            </select>
+            <input class="ctrl search" type="search" placeholder="Buscar asunto o cliente…">
+            <label class="sim"><input type="checkbox" id="simulateError"> simular error al mover</label>
+            <span class="spacer"></span>
+            <button class="btn" id="reload">↻ Refrescar</button>
+            <button class="btn" title="Etapas del buzón">⚙ Etapas</button>
+        </div>
+        <div class="chips">
+            <span class="chip">Abiertas: <b>41</b></span>
+            <span class="chip">Sin etapa: <b>6</b></span>
+            <span class="chip">Sin asignar: <b>7</b></span>
+            <span class="chip">Sin respuesta &gt; 3 días: <b>4</b></span>
+        </div>
+
+        <!-- leyenda: la línea de color de la tarjeta indica el medio de entrada -->
+        <div class="legend">
+            <span class="lbl">Medio de entrada:</span>
+            <span class="item"><span class="bar m-email"></span>Email</span>
+            <span class="item"><span class="bar m-whatsapp"></span>WhatsApp</span>
+            <span class="item"><span class="bar m-phone"></span>Llamada</span>
+            <span class="item"><span class="bar m-sms"></span>SMS</span>
+            <span class="item"><span class="bar m-chat"></span>Chat</span>
+            <span class="item"><span class="bar m-custom"></span>Personalizado</span>
+        </div>
+
+        <div class="hint">Prototipo estático: arrastra una tarjeta entre columnas. El menú <b>⋯</b> de cada tarjeta abre
+            las acciones rápidas.</div>
+
+        <!-- ═══════════ tablero ═══════════ -->
+        <div class="board" id="board">
+
+            <section class="col" data-stage="none" data-name="Sin etapa">
+                <div class="col-head"><span class="swatch"></span><span class="col-title">Sin etapa</span><span
+                        class="count">3</span></div>
+                <div class="col-body" data-drop>
+                    <article class="card" draggable="true" data-id="1042" data-status="2" data-medium="whatsapp"
+                        title="Medio: WhatsApp">
+                        <div class="card-top"><span class="num">#1042</span><span class="scenario"><span
+                                    class="tag pending">Pendiente</span></span><span>hace 5 d</span></div>
+                        <div class="subject">Error al sincronizar catálogo con el TPV</div>
+                        <div class="customer">Marta Ruiz · Ferretería Ruiz</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="whatsapp"><span class="d"></span>WhatsApp</span>
+                            <span class="meta">👤 Sin asignar</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                    <article class="card" draggable="true" data-id="1039" data-status="1" data-medium="email"
+                        title="Medio: Email">
+                        <div class="card-top"><span class="num">#1039</span><span class="scenario"><span
+                                    class="tag active">Activa</span></span><span>hace 2 d</span></div>
+                        <div class="subject">Pedido recibido incompleto — falta 1 bulto</div>
+                        <div class="customer">Logística Norte S.L.</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="email"><span class="d"></span>Email</span>
+                            <span class="meta">📎 adjunto</span>
+                            <span class="meta">👤 Ana López</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                    <article class="card" draggable="true" data-id="1031" data-status="2" data-medium="phone"
+                        title="Medio: Llamada">
+                        <div class="card-top"><span class="num">#1031</span><span class="scenario"><span
+                                    class="tag pending">Pendiente</span></span><span>hace 6 d</span></div>
+                        <div class="subject">Consulta facturación trimestral</div>
+                        <div class="customer">Grupo Almenara</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="phone"><span class="d"></span>Llamada</span>
+                            <span class="meta warn">⏱ 6 d sin respuesta</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="col" data-stage="new" data-name="Nuevo">
+                <div class="col-head"><span class="swatch"></span><span class="col-title">Nuevo</span><span
+                        class="count">4</span></div>
+                <div class="col-body" data-drop>
+                    <article class="card" draggable="true" data-id="1051" data-status="2" data-medium="whatsapp"
+                        title="Medio: WhatsApp">
+                        <div class="card-top"><span class="num">#1051</span><span class="scenario"><span
+                                    class="tag pending">Pendiente</span></span><span>hace 20 min</span></div>
+                        <div class="subject">¿Tenéis integración con WhatsApp Business?</div>
+                        <div class="customer">Carlos Vidal · Vidalsa</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="whatsapp"><span class="d"></span>WhatsApp</span>
+                            <span class="meta">👤 Sin asignar</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                    <article class="card" draggable="true" data-id="1050" data-status="1" data-medium="email"
+                        title="Medio: Email">
+                        <div class="card-top"><span class="num">#1050</span><span class="scenario"><span
+                                    class="tag active">Activa</span></span><span>hace 1 h</span></div>
+                        <div class="subject">Alta de 3 usuarios nuevos en el portal</div>
+                        <div class="customer">Servicios Bravo</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="email"><span class="d"></span>Email</span>
+                            <span class="meta">👤 Xavier Freire</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                    <article class="card" draggable="true" data-id="1049" data-status="1" data-medium="sms"
+                        title="Medio: SMS">
+                        <div class="card-top"><span class="num">#1049</span><span class="scenario"><span
+                                    class="tag active">Activa</span></span><span>hace 3 h</span></div>
+                        <div class="subject">Solicitud de presupuesto para módulo de stock</div>
+                        <div class="customer">Almacenes Pinto</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="sms"><span class="d"></span>SMS</span>
+                            <span class="meta">📎 2 adjuntos</span>
+                            <span class="meta">👤 Ana López</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                    <article class="card" draggable="true" data-id="1047" data-status="2" data-medium="chat"
+                        title="Medio: Chat">
+                        <div class="card-top"><span class="num">#1047</span><span class="scenario"><span
+                                    class="tag pending">Pendiente</span></span><span>hace 8 h</span></div>
+                        <div class="subject">No puedo acceder al panel de administración</div>
+                        <div class="customer">Nuria Sanz</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="chat"><span class="d"></span>Chat</span>
+                            <span class="meta">👤 Sin asignar</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                </div>
+                <div class="col-foot"><a href="#">Cargar más…</a></div>
+            </section>
+
+            <section class="col" data-stage="progress" data-name="En curso" data-wip="3">
+                <div class="col-head"><span class="swatch"></span><span class="col-title">En curso</span><span
+                        class="count wip-over" title="Límite de trabajo en curso: 3">4/3</span></div>
+                <div class="col-body" data-drop>
+                    <article class="card" draggable="true" data-id="1046" data-status="1" data-medium="email"
+                        title="Medio: Email">
+                        <div class="card-top"><span class="num">#1046</span><span class="scenario"><span
+                                    class="tag active">Activa</span></span><span>hace 1 d</span></div>
+                        <div class="subject">Migración de datos del ERP antiguo</div>
+                        <div class="customer">Talleres Merino</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="email"><span class="d"></span>Email</span>
+                            <span class="meta">👤 Xavier Freire</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                    <article class="card" draggable="true" data-id="1045" data-status="2" data-medium="email"
+                        title="Medio: Email">
+                        <div class="card-top"><span class="num">#1045</span><span class="scenario"><span
+                                    class="tag pending">Pendiente</span></span><span>hace 1 d</span></div>
+                        <div class="subject">Configurar envío automático de facturas</div>
+                        <div class="customer">Asesoría Delgado</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="email"><span class="d"></span>Email</span>
+                            <span class="meta">📎 adjunto</span>
+                            <span class="meta">👤 Ana López</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                    <article class="card" draggable="true" data-id="1044" data-status="1" data-medium="whatsapp"
+                        title="Medio: WhatsApp">
+                        <div class="card-top"><span class="num">#1044</span><span class="scenario"><span
+                                    class="tag active">Activa</span></span><span>hace 2 d</span></div>
+                        <div class="subject">Optimizar consultas lentas del listado de pedidos</div>
+                        <div class="customer">Distribuciones Oria</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="whatsapp"><span class="d"></span>WhatsApp</span>
+                            <span class="meta">👤 Xavier Freire</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                    <article class="card" draggable="true" data-id="1043" data-status="2" data-medium="email"
+                        title="Medio: Email">
+                        <div class="card-top"><span class="num">#1043</span><span class="scenario"><span
+                                    class="tag pending">Pendiente</span></span><span>hace 2 d</span></div>
+                        <div class="subject">Revisar plantilla de correo de confirmación</div>
+                        <div class="customer">Panadería Sol</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="email"><span class="d"></span>Email</span>
+                            <span class="meta">👤 Ana López</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="col" data-stage="waiting" data-name="Esperando cliente">
+                <div class="col-head"><span class="swatch"></span><span class="col-title">Esperando cliente</span><span
+                        class="count">2</span></div>
+                <div class="col-body" data-drop>
+                    <article class="card" draggable="true" data-id="1038" data-status="2" data-medium="email"
+                        title="Medio: Email">
+                        <div class="card-top"><span class="num">#1038</span><span class="scenario"><span
+                                    class="tag pending">Pendiente</span></span><span>hace 4 d</span></div>
+                        <div class="subject">Falta confirmación de datos fiscales</div>
+                        <div class="customer">Construcciones Vega</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="email"><span class="d"></span>Email</span>
+                            <span class="meta warn">⏱ 4 d sin respuesta</span>
+                            <span class="meta">👤 Ana López</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                    <article class="card" draggable="true" data-id="1036" data-status="2" data-medium="phone"
+                        title="Medio: Llamada">
+                        <div class="card-top"><span class="num">#1036</span><span class="scenario"><span
+                                    class="tag pending">Pendiente</span></span><span>hace 7 d</span></div>
+                        <div class="subject">Pendiente de validar presupuesto de integración</div>
+                        <div class="customer">Hostelería Luna</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="phone"><span class="d"></span>Llamada</span>
+                            <span class="meta warn">⏱ 7 d sin respuesta</span>
+                            <span class="meta">👤 Xavier Freire</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="col" data-stage="resolved" data-name="Resuelto">
+                <div class="col-head"><span class="swatch"></span><span class="col-title">Resuelto</span><span
+                        class="count">1</span></div>
+                <div class="col-body" data-drop>
+                    <article class="card" draggable="true" data-id="1035" data-status="1" data-medium="custom"
+                        title="Medio: Personalizado">
+                        <div class="card-top"><span class="num">#1035</span><span class="scenario"><span
+                                    class="tag active">Activa</span></span><span>hace 1 d</span></div>
+                        <div class="subject">Backup diario verificado correctamente</div>
+                        <div class="customer">Clínica Dental Sonrisa</div>
+                        <div class="card-bottom">
+                            <span class="mid" data-m="custom"><span class="d"></span>Personalizado</span>
+                            <span class="meta">👤 Xavier Freire</span>
+                            <button class="card-menu" aria-label="Acciones">⋯</button>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+        </div>
+
+        <div class="toast" id="toast"></div>
+
+        <script>
+            ( function () {
+                'use strict';
+
+                var board = document.getElementById( 'board' );
+                var toastEl = document.getElementById( 'toast' );
+                var toastT = null;
+                var dragCard = null;
+
+                function toast ( msg, isError ) {
+                    toastEl.textContent = msg;
+                    toastEl.className = 'toast show' + ( isError ? ' error' : '' );
+                    clearTimeout( toastT );
+                    toastT = setTimeout( function () {
+                        toastEl.className = 'toast';
+                    }, 2600 );
+                }
+
+                // Contadores por columna (incluye el aviso de WIP).
+                function refreshCounts () {
+                    Array.prototype.forEach.call( board.querySelectorAll( '.col' ), function ( col ) {
+                        var n = col.querySelectorAll( '.card' ).length;
+                        var wip = parseInt( col.getAttribute( 'data-wip' ) || '0', 10 );
+                        var el = col.querySelector( '.count' );
+                        el.textContent = wip ? n + '/' + wip : String( n );
+                        el.className = 'count' + ( wip && n > wip ? ' wip-over' : '' );
+                        var empty = col.querySelector( '.col-body .empty' );
+                        if ( n === 0 && !empty ) {
+                            var p = document.createElement( 'div' );
+                            p.className = 'empty';
+                            p.textContent = 'Sin conversaciones';
+                            col.querySelector( '.col-body' ).appendChild( p );
+                        } else if ( n > 0 && empty ) {
+                            empty.remove();
+                        }
+                    } );
+                }
+
+                // ── Drag & drop ──────────────────────────────────────────────────────────
+                board.addEventListener( 'dragstart', function ( e ) {
+                    var card = e.target.closest( '.card' );
+                    if ( !card ) return;
+                    dragCard = card;
+                    card.classList.add( 'dragging' );
+                    e.dataTransfer.effectAllowed = 'move';
+                    try {
+                        e.dataTransfer.setData( 'text/plain', card.getAttribute( 'data-id' ) );
+                    } catch ( x ) { }
+                } );
+
+                board.addEventListener( 'dragend', function () {
+                    if ( dragCard ) dragCard.classList.remove( 'dragging' );
+                    dragCard = null;
+                    Array.prototype.forEach.call( board.querySelectorAll( '.col.drop' ), function ( c ) {
+                        c.classList.remove( 'drop' );
+                    } );
+                } );
+
+                board.addEventListener( 'dragover', function ( e ) {
+                    var body = e.target.closest( '.col-body' );
+                    if ( !body || !dragCard ) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    var col = body.closest( '.col' );
+                    Array.prototype.forEach.call( board.querySelectorAll( '.col.drop' ), function ( c ) {
+                        if ( c !== col ) c.classList.remove( 'drop' );
+                    } );
+                    col.classList.add( 'drop' );
+                } );
+
+                board.addEventListener( 'drop', function ( e ) {
+                    var body = e.target.closest( '.col-body' );
+                    if ( !body || !dragCard ) return;
+                    e.preventDefault();
+
+                    var col = body.closest( '.col' );
+                    var stage = col.getAttribute( 'data-stage' );
+                    var stageNm = col.getAttribute( 'data-name' );
+                    var card = dragCard;
+                    var origin = card.parentNode;
+                    var before = card.nextSibling;
+
+                    col.classList.remove( 'drop' );
+
+                    if ( origin === body ) return; // sin cambio de columna
+
+                    // 1) Actualización optimista: la tarjeta se mueve ya.
+                    body.appendChild( card );
+                    refreshCounts();
+
+                    // 2) "Petición" al servidor: aquí iría fsAjax('/kanban/move', {conversation_id, stage}).
+                    var fail = document.getElementById( 'simulateError' ).checked;
+                    setTimeout( function () {
+                        if ( fail && stage !== 'resolved' ) {
+                            // 3) Reversión: vuelve a su sitio original y se avisa.
+                            origin.insertBefore( card, before );
+                            refreshCounts();
+                            toast( 'No se pudo mover a «' + stageNm + '»: sin permisos sobre la conversación', true );
+                            return;
+                        }
+                        var extra = ( stage === 'resolved' ) ? ' · la conversación se ha cerrado' : '';
+                        toast( '#' + card.getAttribute( 'data-id' ) + ' → ' + stageNm + extra, false );
+                    }, 260 );
+                } );
+
+                // ── Menú de acciones rápidas ─────────────────────────────────────────────
+                function closeMenus () {
+                    Array.prototype.forEach.call( document.querySelectorAll( '.menu' ), function ( m ) {
+                        m.remove();
+                    } );
+                }
+
+                function openMenu ( card ) {
+                    closeMenus();
+                    var m = document.createElement( 'div' );
+                    m.className = 'menu';
+                    m.innerHTML =
+                        '<button data-a="assign">Asignar a…</button>' +
+                        '<button data-a="status">Cerrar conversación</button>' +
+                        '<button data-a="note">Añadir nota rápida</button>' +
+                        '<div class="sep"></div>' +
+                        '<button data-a="open">Abrir conversación</button>';
+                    card.appendChild( m );
+                    m.addEventListener( 'click', function ( e ) {
+                        var btn = e.target.closest( 'button' );
+                        if ( !btn ) return;
+                        var a = btn.getAttribute( 'data-a' );
+                        closeMenus();
+                        if ( a === 'assign' ) toast( '#' + card.getAttribute( 'data-id' ) + ' asignada a Ana López' );
+                        else if ( a === 'status' ) toast( '#' + card.getAttribute( 'data-id' ) + ' cerrada' );
+                        else if ( a === 'note' ) toast( 'Nota añadida a #' + card.getAttribute( 'data-id' ) );
+                        else toast( 'Abriendo conversación #' + card.getAttribute( 'data-id' ) + '…' );
+                    } );
+                }
+
+                board.addEventListener( 'click', function ( e ) {
+                    var btn = e.target.closest( '.card-menu' );
+                    if ( btn ) {
+                        e.stopPropagation();
+                        openMenu( btn.closest( '.card' ) );
+                        return;
+                    }
+                    if ( !e.target.closest( '.menu' ) ) closeMenus();
+                } );
+                document.addEventListener( 'keydown', function ( e ) {
+                    if ( e.key === 'Escape' ) closeMenus();
+                } );
+                document.getElementById( 'reload' ).addEventListener( 'click', function () {
+                    toast( 'Tablero actualizado' );
+                } );
+
+                refreshCounts();
+            } )();
+        </script>
+    </body>
+
+</html>

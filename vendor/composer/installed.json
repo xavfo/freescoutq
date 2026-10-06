@@ -2332,11 +2332,7 @@
                 }
             },
             "installation-source": "dist",
-            "autoload": {
-                "classmap": [
-                    "src/"
-                ]
-            },
+            "autoload": {},
             "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
@@ -3233,14 +3229,7 @@
                 }
             },
             "installation-source": "dist",
-            "autoload": {
-                "classmap": [
-                    "src/controllers"
-                ],
-                "psr-0": {
-                    "Rap2hpoutre\\LaravelLogViewer\\": "src/"
-                }
-            },
+            "autoload": {},
             "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"

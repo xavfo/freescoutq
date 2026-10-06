@@ -2,7 +2,7 @@
   "name": "RestApi",
   "alias": "restapi",
   "description": "REST API module for managing conversations, threads, and customers by qsoftware.biz",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "detailsUrl": "https://www.qsoftware.biz",
   "author": "FreeScout",
   "authorUrl": "https://www.qsoftware.biz",

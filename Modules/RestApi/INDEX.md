@@ -296,6 +296,6 @@ Editar `config/rest-api.php`:
 
 **Estado**: ✅ Implementación completa - Listo para producción
 
-**Versión**: 1.0.0  
-**Fecha**: 2026-04-15  
+**Versión**: 1.5.0  
+**Fecha**: 2026-10-05  
 **Licencia**: AGPL-3.0

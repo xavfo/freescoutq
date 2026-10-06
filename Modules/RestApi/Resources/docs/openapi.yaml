@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: FreeScout REST API
   description: REST API for managing conversations, threads, and customers in FreeScout
-  version: 1.0.0
+  version: 1.5.0
   contact:
     name: FreeScout
     url: https://freescout.net

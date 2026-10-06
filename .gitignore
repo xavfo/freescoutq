@@ -27,6 +27,8 @@ Thumbs.db
 /Modules/*
 !/Modules/RestApi/
 !/Modules/RestApi/**
+!/Modules/Kanban/
+!/Modules/Kanban/**
 /Modules/**/.git
 /public/modules
 /public/docs

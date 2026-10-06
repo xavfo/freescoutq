@@ -96,6 +96,7 @@
         "psr-4": {
             "App\\": "app/",
             "Modules\\RestApi\\": "Modules/RestApi/",
+            "Modules\\Kanban\\": "Modules/Kanban/",
             "Axn\\Laroute\\Routes\\": "overrides/axn/laravel-laroute/src/Routes/",
             "Webklex\\PHPIMAP\\": "overrides/webklex/php-imap/src/",
             "RachidLaasri\\LaravelInstaller\\Helpers\\": "overrides/rachidlaasri/laravel-installer/src/Helpers/",
