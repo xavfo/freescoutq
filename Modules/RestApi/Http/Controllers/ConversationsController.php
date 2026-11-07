@@ -13,6 +13,7 @@ use Modules\RestApi\Entities\DTOs\ConversationDTO;
 use Modules\RestApi\Http\Requests\StoreConversationRequest;
 use Modules\RestApi\Http\Requests\UpdateConversationRequest;
 use Modules\RestApi\Support\Channels;
+use Modules\RestApi\Support\Kanban;
 use Modules\RestApi\Support\LogsApiAudit;
 use Modules\RestApi\Support\MailboxAccess;
 
@@ -49,7 +50,33 @@ class ConversationsController extends Controller
         }
 
         if ($request->has('assigned_to')) {
-            $query->where('user_id', $request->input('assigned_to'));
+            $assignedTo = $request->input('assigned_to');
+
+            // null / "null" / 0 mean "unassigned"; a plain where() with null
+            // would generate `user_id = NULL` and never match.
+            if ($assignedTo === null || $assignedTo === '' || $assignedTo === 'null' || (int) $assignedTo === 0) {
+                $query->whereNull('user_id');
+            } else {
+                $query->where('user_id', $assignedTo);
+            }
+        }
+
+        if ($request->has('kanban_stage')) {
+            if (!Kanban::isAvailable()) {
+                return response()->json([
+                    'message' => __('Kanban module is not active'),
+                    'status_code' => 422,
+                    'error' => Kanban::ERROR_NOT_AVAILABLE,
+                ], 422);
+            }
+
+            $stage = $request->input('kanban_stage');
+
+            if ($stage === null || $stage === '' || $stage === Kanban::NONE) {
+                $query->whereNull('kanban_stage');
+            } else {
+                $query->where('kanban_stage', $stage);
+            }
         }
 
         // Sort
@@ -148,6 +175,37 @@ class ConversationsController extends Controller
             ], 404);
         }
 
+        // Validate the Kanban stage before creating anything: a bad stage must
+        // not leave an orphan conversation behind.
+        $hasKanbanStage = $request->exists('kanban_stage');
+        $kanbanStage = null;
+
+        if ($hasKanbanStage) {
+            $kanban = Kanban::validate($mailbox, $request->input('kanban_stage'));
+
+            if (!$kanban['ok']) {
+                return Channels::errorResponse(
+                    $kanban['error'],
+                    $kanban['message'],
+                    'kanban_stage'
+                );
+            }
+
+            $kanbanStage = $kanban['stage'];
+        }
+
+        // Initial thread type. Notes are internal and are never delivered;
+        // omitting the field keeps the historical message behaviour.
+        $threadType = (int) $request->input('thread_type', Thread::TYPE_MESSAGE);
+
+        if (!in_array($threadType, [Thread::TYPE_MESSAGE, Thread::TYPE_NOTE, Thread::TYPE_CHAT], true)) {
+            return Channels::errorResponse(
+                'thread_type_invalid',
+                __('Invalid thread type (2=message, 3=note, 8=chat)'),
+                'thread_type'
+            );
+        }
+
         // Communication medium: "channel" (name) overrides "type" (number).
         $type = Channels::type($request->input('type', Conversation::TYPE_EMAIL));
         if ($request->filled('channel')) {
@@ -195,8 +253,9 @@ class ConversationsController extends Controller
         // WhatsApp conversations are delivered by default (that is their
         // purpose). Email conversations are only delivered when the caller
         // asks for it with send_message=true, preserving the historical
-        // "create only" behaviour of the API.
-        $send = Channels::shouldSend($request, $type);
+        // "create only" behaviour of the API. Notes and chats are never
+        // delivered.
+        $send = $threadType === Thread::TYPE_MESSAGE && Channels::shouldSend($request, $type);
 
         if ($send && Channels::isDeliverable($type)) {
             // Fail fast with a clear error instead of queueing a message that
@@ -220,10 +279,15 @@ class ConversationsController extends Controller
 
             $customerEmail = $this->customerEmailFor($customer, $type, $to);
 
-            // Assignee: optional "assigned_to", token owner by default.
-            $assigneeId = $request->filled('assigned_to')
-                ? (int) $request->input('assigned_to')
-                : ($userId ? (int) $userId : null);
+            // Assignee: an explicit null means "leave it unassigned"; only an
+            // omitted field falls back to the token owner.
+            if ($request->exists('assigned_to')) {
+                $assigneeId = $request->input('assigned_to') !== null
+                    ? (int) $request->input('assigned_to')
+                    : null;
+            } else {
+                $assigneeId = $userId ? (int) $userId : null;
+            }
 
             $conversation = new Conversation();
             $conversation->mailbox_id = $mailbox->id;
@@ -242,9 +306,13 @@ class ConversationsController extends Controller
             $conversation->updateFolder($mailbox);
             $conversation->save();
 
+            if ($hasKanbanStage) {
+                Kanban::apply($conversation, $kanbanStage, $userId ? (int) $userId : null);
+            }
+
             // Thread is guarded, so it must be built through Thread::create(),
             // which also fills status/state/source_via/source_type.
-            $thread = Thread::create($conversation, Thread::TYPE_MESSAGE, $request->input('body'), [
+            $thread = Thread::create($conversation, $threadType, $request->input('body'), [
                 'user_id' => $assigneeId,
                 'created_by_user_id' => $userId ? (int) $userId : null,
                 'customer_id' => $customer->id,
@@ -306,6 +374,33 @@ class ConversationsController extends Controller
             ], 403);
         }
 
+        $hasKanbanStage = $request->exists('kanban_stage');
+        $kanbanStage = null;
+
+        if ($hasKanbanStage) {
+            $mailbox = $conversation->mailbox;
+
+            if (!$mailbox) {
+                return Channels::errorResponse(
+                    Kanban::ERROR_STAGE_INVALID,
+                    __('The conversation has no mailbox'),
+                    'kanban_stage'
+                );
+            }
+
+            $kanban = Kanban::validate($mailbox, $request->input('kanban_stage'));
+
+            if (!$kanban['ok']) {
+                return Channels::errorResponse(
+                    $kanban['error'],
+                    $kanban['message'],
+                    'kanban_stage'
+                );
+            }
+
+            $kanbanStage = $kanban['stage'];
+        }
+
         try {
             if ($request->has('status')) {
                 $conversation->status = (int) $request->input('status');
@@ -317,6 +412,14 @@ class ConversationsController extends Controller
 
             if ($request->has('customer_id')) {
                 $conversation->customer_id = $request->input('customer_id');
+            }
+
+            if ($hasKanbanStage) {
+                Kanban::apply(
+                    $conversation,
+                    $kanbanStage,
+                    $request->attributes->get('user_id')
+                );
             }
 
             $conversation->updateFolder();

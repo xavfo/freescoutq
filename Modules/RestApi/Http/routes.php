@@ -26,6 +26,9 @@ Route::group([
     Route::get('/customers/{id}', 'CustomersController@show');
     Route::put('/customers/{id}', 'CustomersController@update');
     Route::delete('/customers/{id}', 'CustomersController@destroy');
+
+    // Mailboxes (Kanban integration)
+    Route::get('/mailboxes/{id}/kanban-stages', 'MailboxesController@kanbanStages');
 });
 
 // API Token Management Routes (Web Interface)

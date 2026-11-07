@@ -10,6 +10,8 @@ A comprehensive REST API module for FreeScout that enables programmatic communic
 ✅ **Conversations**: Create, read, update, delete conversations  
 ✅ **Threads**: Add replies, notes, and manage message history  
 ✅ **Customers**: Create and manage customer profiles  
+✅ **Kanban**: Read mailbox stages and create/update conversations with `kanban_stage`
+✅ **Thread types**: Create conversations and threads as message (`2`), note (`3`) or chat (`8`)
 ✅ **Webhooks**: Real-time event notifications  
 ✅ **Audit Logging**: Track all API calls  
 ✅ **OpenAPI/Swagger**: Full API documentation  
@@ -116,6 +118,35 @@ See [QUICK_START.md](./Resources/docs/QUICK_START.md) for more examples.
 - `GET /api/v1/customers` - List customers
 - `POST /api/v1/customers` - Create customer
 - `GET /api/v1/customers/{id}` - Get customer
+
+#### Mailboxes
+- `GET /api/v1/mailboxes/{id}/kanban-stages` - List the mailbox Kanban stages, including `__none`
+
+### Thread type and Kanban
+
+`POST /api/v1/conversations` accepts `thread_type` (`2` message, `3` note, `8` chat)
+and `kanban_stage`. Omitting `thread_type` keeps the historical message behaviour.
+`kanban_stage: "__none"` leaves the conversation in the virtual **Sin etapa** column.
+
+```bash
+curl -X POST https://your-domain.com/api/v1/conversations \
+  -H "Authorization: Bearer fs_xxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mailbox_id": 3,
+    "subject": "Nueva solicitud",
+    "to": ["customer@example.com"],
+    "body": "Formulario abierto desde la landing.",
+    "thread_type": 3,
+    "assigned_to": null,
+    "kanban_stage": "__none",
+    "send_message": false
+  }'
+```
+
+`PUT /api/v1/conversations/{id}` also accepts `kanban_stage` and `assigned_to: null`.
+When the Kanban module is not active, a request that includes `kanban_stage`
+receives `422 kanban_not_available`; the rest of the API keeps working.
 
 ### Response Format
 

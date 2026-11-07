@@ -22,6 +22,8 @@ class ConversationDTO
     public $threads_count;
     public $assignee_id;
     public $assignee_name;
+    public $assigned_to;
+    public $kanban_stage;
     public $created_at;
     public $updated_at;
     public $last_message_preview;
@@ -48,6 +50,13 @@ class ConversationDTO
         $instance->threads_count = $conversation->threads_count ?? 0;
         $instance->assignee_id = $conversation->user_id;
         $instance->assignee_name = $conversation->user ? $conversation->user->getFullName() : null;
+        // Alias with the same name used by the create/update payloads. It
+        // keeps `assignee` for existing clients and makes explicit unassigned
+        // conversations easy to distinguish from a missing field.
+        $instance->assigned_to = $conversation->user_id;
+        // Null when the Kanban module is not installed or the conversation has
+        // no stage; __none is only a request alias and is never stored.
+        $instance->kanban_stage = $conversation->kanban_stage ?? null;
         $instance->created_at = $conversation->created_at->toIso8601String();
         $instance->updated_at = $conversation->updated_at->toIso8601String();
         $lastThread = $conversation->threads()->latest()->first();
@@ -74,6 +83,8 @@ class ConversationDTO
             'status_name' => $this->status_name,
             'state' => $this->state,
             'type' => $this->type,
+            'assigned_to' => $this->assigned_to,
+            'kanban_stage' => $this->kanban_stage,
             'type_name' => $this->type_name,
             'channel' => $this->channel,
             'threads_count' => $this->threads_count,

@@ -121,7 +121,12 @@ class ThreadsController extends Controller
 
         // The medium is defined by the conversation itself.
         $type = (int) $conversation->type;
-        $threadType = (int) $request->input('type', Thread::TYPE_MESSAGE);
+        // `thread_type` mirrors the conversation payload; `type` keeps working
+        // for existing clients.
+        $threadType = (int) $request->input(
+            'thread_type',
+            $request->input('type', Thread::TYPE_MESSAGE)
+        );
 
         // Notes are internal and are never delivered. For deliverable channels
         // (email / WhatsApp) the reply is sent by default when the caller does

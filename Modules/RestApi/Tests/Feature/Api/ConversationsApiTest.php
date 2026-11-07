@@ -6,6 +6,10 @@ use Tests\TestCase;
 use App\User;
 use App\Mailbox;
 use App\Customer;
+use App\Conversation;
+use App\Thread;
+use App\Jobs\SendReplyToCustomer;
+use Illuminate\Support\Facades\Queue;
 use Modules\RestApi\Entities\ApiKey;
 
 class ConversationsApiTest extends TestCase
@@ -83,6 +87,47 @@ class ConversationsApiTest extends TestCase
         foreach (['id', 'mailbox_id', 'subject', 'status'] as $key) {
             $this->assertArrayHasKey($key, $body);
         }
+    }
+
+    public function test_create_conversation_with_note_thread_type()
+    {
+        Queue::fake();
+
+        $response = $this->postJson('/api/v1/conversations', [
+            'mailbox_id' => $this->mailbox->id,
+            'subject' => 'Internal note',
+            'to' => ['customer@example.com'],
+            'body' => 'This is an internal note',
+            'thread_type' => 3,
+            'send_message' => false,
+        ], [
+            'Authorization' => 'Bearer ' . $this->token,
+        ]);
+
+        $response->assertStatus(201);
+
+        $conversation = Conversation::find($response->json()['id']);
+        $this->assertSame(Thread::TYPE_NOTE, (int) $conversation->threads()->first()->type);
+        Queue::assertNotPushed(SendReplyToCustomer::class);
+    }
+
+    public function test_explicit_null_assignee_keeps_conversation_unassigned()
+    {
+        $response = $this->postJson('/api/v1/conversations', [
+            'mailbox_id' => $this->mailbox->id,
+            'subject' => 'Unassigned conversation',
+            'to' => ['customer@example.com'],
+            'body' => 'Nobody owns this yet',
+            'assigned_to' => null,
+        ], [
+            'Authorization' => 'Bearer ' . $this->token,
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertNull($response->json()['assigned_to']);
+
+        $conversation = Conversation::find($response->json()['id']);
+        $this->assertNull($conversation->user_id);
     }
 
     public function test_create_conversation_validation()

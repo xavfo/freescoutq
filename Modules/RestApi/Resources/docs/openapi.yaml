@@ -64,6 +64,14 @@ components:
               type: integer
             name:
               type: string
+        assigned_to:
+          type: integer
+          nullable: true
+          description: Alias of assignee.id; null when the conversation is unassigned.
+        kanban_stage:
+          type: string
+          nullable: true
+          description: Kanban stage id; null when the conversation has no stage.
         created_at:
           type: string
           format: date-time
@@ -168,9 +176,14 @@ paths:
             type: integer
         - name: assigned_to
           in: query
-          description: Filter by assigned user ID
+          description: "Filter by assigned user ID; null or 0 means unassigned"
           schema:
-            type: integer
+            type: string
+        - name: kanban_stage
+          in: query
+          description: "Filter by Kanban stage; __none means Sin etapa"
+          schema:
+            type: string
         - name: sort
           in: query
           description: "Sort field (prefix with - for descending: -created_at)"
@@ -250,7 +263,27 @@ paths:
                   type: string
                 type:
                   type: integer
-                  enum: [1, 2, 3, 4]
+                  enum: [1, 2, 3, 4, 5]
+                channel:
+                  type: string
+                  enum: [email, phone, chat, custom, whatsapp]
+                thread_type:
+                  type: integer
+                  enum: [2, 3, 8]
+                  default: 2
+                assigned_to:
+                  type: integer
+                  nullable: true
+                kanban_stage:
+                  type: string
+                  nullable: true
+                  description: "Stage id or __none for Sin etapa"
+                send_message:
+                  type: boolean
+                phone:
+                  type: string
+                name:
+                  type: string
                 status:
                   type: integer
                   enum: [1, 2, 3, 4]
@@ -306,8 +339,13 @@ paths:
                   enum: [1, 2, 3, 4]
                 assigned_to:
                   type: integer
+                  nullable: true
                 customer_id:
                   type: integer
+                kanban_stage:
+                  type: string
+                  nullable: true
+                  description: "Stage id or __none for Sin etapa"
       responses:
         '200':
           description: Success
@@ -386,6 +424,10 @@ paths:
                   type: integer
                   enum: [2, 3, 8]
                   default: 2
+                thread_type:
+                  type: integer
+                  enum: [2, 3, 8]
+                  description: "Alias of type; message=2, note=3, chat=8"
                 body:
                   type: string
                 cc:
@@ -403,6 +445,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Thread'
+
+  /mailboxes/{id}/kanban-stages:
+    get:
+      summary: List Kanban stages for a mailbox
+      operationId: listMailboxKanbanStages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        color:
+                          type: string
+                          nullable: true
+                        wip:
+                          type: integer
+                        status:
+                          type: integer
+                          nullable: true
+                        virtual:
+                          type: boolean
+                  meta:
+                    type: object
+                    properties:
+                      mailbox_id:
+                        type: integer
+        '403':
+          description: Unauthorized to access this mailbox
+        '404':
+          description: Mailbox not found
+        '422':
+          description: Kanban module is not active
 
   /threads/{id}:
     get:

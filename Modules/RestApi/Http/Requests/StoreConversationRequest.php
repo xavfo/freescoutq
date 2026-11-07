@@ -31,7 +31,14 @@ class StoreConversationRequest extends FormRequest
             'channel' => 'nullable|string|in:' . implode(',', array_values(Channels::all())),
             'status' => 'in:1,2,3,4',
             'customer_id' => 'integer|exists:customers,id',
-            'assigned_to' => 'integer|exists:users,id',
+            // nullable lets an explicit `assigned_to: null` mean "unassigned"
+            // instead of falling back to the token owner.
+            'assigned_to' => 'nullable|integer|exists:users,id',
+            // Initial thread type: 2=message, 3=note, 8=chat. Omitting it keeps
+            // the historical message behaviour.
+            'thread_type' => 'nullable|integer|in:2,3,8',
+            // Kanban stage id; __none leaves the conversation without stage.
+            'kanban_stage' => 'nullable|string|max:64',
             // Whether the message must be delivered to the customer
             // (email / WhatsApp). "send" is accepted as an alias.
             'send_message' => 'nullable|boolean',
@@ -71,6 +78,8 @@ class StoreConversationRequest extends FormRequest
             'body.required' => 'Body content is required',
             'type.in' => 'Invalid conversation type',
             'channel.in' => 'Invalid channel (email, phone, chat, custom, whatsapp)',
+            'thread_type.in' => 'Invalid thread type (2=message, 3=note, 8=chat)',
+            'kanban_stage.max' => 'Kanban stage id is too long',
         ];
     }
 }

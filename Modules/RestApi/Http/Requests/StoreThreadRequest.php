@@ -15,6 +15,8 @@ class StoreThreadRequest extends FormRequest
     {
         return [
             'type' => 'in:2,3,8',
+            // Alias matching the conversation payload. `type` keeps working.
+            'thread_type' => 'nullable|integer|in:2,3,8',
             'body' => 'required|string',
             // Whether the reply must be delivered to the customer through the
             // conversation channel (email / WhatsApp). Alias: "send".
@@ -31,6 +33,7 @@ class StoreThreadRequest extends FormRequest
     {
         return [
             'type.in' => 'Invalid thread type (2=message, 3=note, 8=chat)',
+            'thread_type.in' => 'Invalid thread type (2=message, 3=note, 8=chat)',
             'body.required' => 'Body content is required',
             'cc.*.email' => 'Invalid CC email format',
             'bcc.*.email' => 'Invalid BCC email format',

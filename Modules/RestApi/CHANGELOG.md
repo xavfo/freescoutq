@@ -6,6 +6,29 @@ La versión se declara **solo** en `module.json` (es la que muestra FreeScout en
 módulos y la que devuelve `RestApiServiceProvider::moduleVersion()`). Esquema `MAYOR.MENOR.PARCHE`:
 MAYOR = cambio incompatible en la API, MENOR = funcionalidad nueva compatible, PARCHE = correcciones.
 
+## [1.6.0] - 2026-10-28
+
+### Added
+- `thread_type` en `POST /conversations` y `POST /conversations/{id}/threads`
+  (`2` mensaje, `3` nota, `8` chat). Si se omite, se mantiene el comportamiento
+  histórico de mensaje.
+- `kanban_stage` en `POST /conversations` y `PUT /conversations/{id}`. Acepta
+  `__none` para dejar la conversación en **Sin etapa** y valida que la etapa
+  pertenezca al buzón. Responde `422 kanban_stage_invalid` si no existe y
+  `422 kanban_not_available` si el módulo Kanban no está activo.
+- `GET /api/v1/mailboxes/{id}/kanban-stages` con las etapas del buzón y la
+  columna virtual `__none`.
+- `ConversationDTO` expone `assigned_to` (alias de `assignee.id`) y
+  `kanban_stage`; `assignee` se conserva por compatibilidad.
+- Filtros `assigned_to=null`/`0` y `kanban_stage=__none` en
+  `GET /conversations`.
+
+### Changed
+- `assigned_to: null` ahora significa **sin asignar**. Antes, un `null`
+  explícito se interpretaba como campo ausente y caía al dueño del token.
+- Las notas (`thread_type=3`) nunca se entregan al cliente, aunque el cliente
+  envíe `send_message=true`.
+
 ## [1.5.0] - 2026-10-05
 
 ### Added

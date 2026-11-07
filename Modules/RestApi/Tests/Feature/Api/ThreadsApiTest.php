@@ -70,6 +70,21 @@ class ThreadsApiTest extends TestCase
         $this->assertSame('This is a reply', $response->json()['body']);
     }
 
+    public function test_create_thread_with_thread_type_alias()
+    {
+        $response = $this->postJson(
+            '/api/v1/conversations/' . $this->conversation->id . '/threads',
+            [
+                'thread_type' => 3,
+                'body' => 'Internal note through the alias',
+            ],
+            ['Authorization' => 'Bearer ' . $this->token]
+        );
+
+        $response->assertStatus(201);
+        $this->assertSame(3, (int) $response->json()['type']);
+    }
+
     public function test_create_thread_validation()
     {
         $response = $this->postJson(

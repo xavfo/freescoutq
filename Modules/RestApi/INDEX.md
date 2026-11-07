@@ -19,7 +19,8 @@ Modules/RestApi/
 │   ├── Controllers/
 │   │   ├── ConversationsController.php    # CRUD conversations
 │   │   ├── ThreadsController.php          # CRUD threads/replies
-│   │   └── CustomersController.php        # CRUD customers
+│   │   ├── CustomersController.php        # CRUD customers
+│   │   └── MailboxesController.php        # Etapas Kanban del buzón
 │   ├── Middleware/
 │   │   ├── CheckApiTokenMiddleware.php    # Autenticación
 │   │   └── RateLimitMiddleware.php        # Rate limiting
@@ -38,6 +39,12 @@ Modules/RestApi/
 │       ├── ConversationDTO.php     # Data transformation
 │       ├── ThreadDTO.php           # Data transformation
 │       └── CustomerDTO.php         # Data transformation
+│
+├── Support/
+│   ├── Channels.php                # Canales y entrega
+│   ├── Kanban.php                  # Puente opcional con el módulo Kanban
+│   ├── MailboxAccess.php           # Alcance de buzones del token
+│   └── LogsApiAudit.php            # Auditoría
 │
 ├── Providers/
 │   └── RestApiServiceProvider.php  # Registro del módulo
@@ -79,7 +86,8 @@ Modules/RestApi/
     │       ├── ThreadsApiTest.php
     │       └── CustomersApiTest.php
     └── Unit/
-        └── ApiKeyTest.php
+        ├── ApiKeyTest.php
+        └── KanbanTest.php
 ```
 
 ## 🚀 Inicio Rápido
@@ -146,6 +154,15 @@ GET    /api/v1/customers              # Listar con búsqueda
 POST   /api/v1/customers              # Crear cliente
 GET    /api/v1/customers/{id}         # Obtener con últimas conversations
 ```
+
+#### Mailboxes / Kanban
+```
+GET    /api/v1/mailboxes/{id}/kanban-stages  # Etapas del buzón, incluida __none
+```
+
+`POST /api/v1/conversations` y `PUT /api/v1/conversations/{id}` aceptan
+`thread_type` (2 mensaje, 3 nota, 8 chat), `assigned_to: null` y
+`kanban_stage` (`__none` = Sin etapa).
 
 ### ✅ Webhooks
 - [x] Eventos: `conversation.created`, `conversation.status_changed`, `thread.created`
