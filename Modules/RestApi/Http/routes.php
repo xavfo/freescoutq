@@ -42,5 +42,6 @@ Route::group([
 ], function () {
     Route::get('/', 'ApiTokenController@index')->name('restapi.api-tokens.index');
     Route::post('/', 'ApiTokenController@store')->name('restapi.api-tokens.store');
+    Route::post('/{id}/reveal', 'ApiTokenController@reveal')->name('restapi.api-tokens.reveal');
     Route::delete('/{id}', 'ApiTokenController@destroy')->name('restapi.api-tokens.destroy');
 });

@@ -94,6 +94,10 @@ class ConversationMediaTest extends TestCase
     {
         Queue::fake();
 
+        $this->mailbox->out_method = Mailbox::OUT_METHOD_SMTP;
+        $this->mailbox->out_server = null;
+        $this->mailbox->save();
+
         $response = $this->postJson('/api/v1/conversations', [
             'mailbox_id' => $this->mailbox->id,
             'subject' => 'Email conversation',
@@ -171,7 +175,7 @@ class ConversationMediaTest extends TestCase
         $conversation = Conversation::find($body['id']);
         $this->assertTrue($conversation->isWhatsapp());
         $this->assertNotNull($conversation->customer);
-        $this->assertSame('+34 600 11 22 33', $conversation->customer->getMainPhoneNumber());
+        $this->assertSame('34600112233', $conversation->customer->getMainPhoneNumber());
 
         Queue::assertPushed(SendWhatsappReply::class);
     }

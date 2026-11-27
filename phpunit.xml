@@ -22,7 +22,7 @@
     <env name="QUEUE_DRIVER" value="sync"/>
     <!-- Clave válida (base64 de 32 bytes): con una clave inválida, el cifrado de
          la cookie de sesión revienta y las pruebas HTTP no pueden ni ejecutarse. -->
-    <env name="APP_KEY" value="base64:2fl+Ktvkfl+Fuz4Qp/A75G2RTiWVA/ZoKZvp6fiiM10="/>
+    <env name="APP_KEY" value="base64:2fl+Ktvkfl+Fuz4Qp/A75G2RTiWVA/ZoKZvp6fiiM10=" force="true"/>
   </php>
   <coverage>
     <include>

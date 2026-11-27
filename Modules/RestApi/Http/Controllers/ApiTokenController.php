@@ -18,7 +18,9 @@ class ApiTokenController extends Controller
         $tokens = ApiKey::with('user')->orderBy('created_at', 'desc')->get();
         $users = User::orderBy('first_name')->get();
 
-        return view('restapi::apitokens.index', compact('tokens', 'users'));
+        return response()
+            ->view('restapi::apitokens.index', compact('tokens', 'users'))
+            ->header('Cache-Control', 'no-store, private');
     }
 
     /**
@@ -70,6 +72,20 @@ class ApiTokenController extends Controller
             ->with('success', 'Token creado exitosamente')
             ->with('token', $token)
             ->with('tokenId', $apiKey->id);
+    }
+
+    /**
+     * Reveal an existing API token to an administrator on demand.
+     */
+    public function reveal($id)
+    {
+        $apiKey = ApiKey::findOrFail($id);
+
+        return redirect()->route('restapi.api-tokens.index')
+            ->with('success', 'Token revelado')
+            ->with('token', $apiKey->token)
+            ->with('tokenId', $apiKey->id)
+            ->with('tokenRevealed', true);
     }
 
     /**

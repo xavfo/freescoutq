@@ -26,6 +26,7 @@ class ApiKey extends Model
     protected $fillable = ['user_id', 'name', 'token', 'token_hash', 'mailbox_ids', 'conversation_type', 'rate_limit', 'active', 'expires_at'];
     protected $casts = [
         'expires_at' => 'datetime',
+        'last_used_at' => 'datetime',
     ];
     protected $hidden = ['token', 'token_hash'];
 

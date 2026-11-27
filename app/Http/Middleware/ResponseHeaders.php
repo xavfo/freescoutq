@@ -36,6 +36,10 @@ class ResponseHeaders
 
     private function removeUnwantedHeaders($headerList)
     {
+        if (PHP_SAPI === 'cli') {
+            return;
+        }
+
         foreach ($headerList as $header) {
             header_remove($header);
         }

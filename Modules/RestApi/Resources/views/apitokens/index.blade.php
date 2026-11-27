@@ -3,18 +3,16 @@
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Administrar Tokens de API</h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn btn-sm" data-toggle="modal"
-                            data-target="#createTokenModal">
-                            <i class="fas fa-plus"></i> Crear Nuevo Token
-                        </button>
-                    </div>
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix">
+                    <h3 class="panel-title pull-left">Administrar Tokens de API</h3>
+                    <button type="button" class="btn btn-default btn-sm pull-right" data-toggle="modal"
+                        data-target="#createTokenModal">
+                        <i class="fas fa-plus"></i> Crear Nuevo Token
+                    </button>
                 </div>
-                <!-- /.card-header -->
-                <div class="card-body">
+                <!-- /.panel-heading -->
+                <div class="panel-body">
                     @if(session('success'))
                     <div class="alert alert-success alert-dismissible">
                         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
@@ -26,11 +24,15 @@
                     <div class="alert alert-info alert-dismissible">
                         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
                         <h5><i class="icon fas fa-info-circle"></i> ¡Importante!</h5>
-                        <p>Tu token ha sido creado. Guárdalo en un lugar seguro, ya que no se mostrará nuevamente.</p>
+                        @if(session('tokenRevealed'))
+                        <p>Este token existente se ha revelado bajo solicitud. Evita compartirlo y guárdalo en un lugar seguro.</p>
+                        @else
+                        <p>Tu token ha sido creado. Guárdalo en un lugar seguro.</p>
+                        @endif
                         <div class="form-group">
                             <label for="tokenValue">Token:</label>
                             <input type="text" class="form-control" id="tokenValue" value="{{ session('token') }}"
-                                readonly>
+                                readonly autocomplete="off">
                             <button type="button" class="btn btn-sm btn-primary mt-2"
                                 onclick="this.select(); document.execCommand('copy');">
                                 Copiar al portapapeles
@@ -40,6 +42,7 @@
                     </div>
                     @endif
                     @if(count($tokens) > 0)
+                    <div class="table-responsive">
                     <table class="table table-hover table-striped">
                         <thead>
                             <tr>
@@ -47,9 +50,11 @@
                                 <th>Usuario</th>
                                 <th>Nombre</th>
                                 <th>Buzones</th>
+                                <th>Token</th>
                                 <th>Activo</th>
                                 <th>Límite de tasa</th>
                                 <th>Creado</th>
+                                <th>Último uso</th>
                                 <th>Expira</th>
                                 <th>Acciones</th>
                             </tr>
@@ -67,10 +72,24 @@
                                     <span class="text-muted">Todos</span>
                                     @endif
                                 </td>
+                                <td>
+                                    <form action="{{ route('restapi.api-tokens.reveal', $token->id) }}" method="POST"
+                                        style="display:inline;">
+                                        {{ csrf_field() }}
+                                        <button type="submit" class="btn btn-default btn-sm">Ver token</button>
+                                    </form>
+                                </td>
                                 <td>{!! $token->active ? '<span class="badge badge-success">Sí</span>' : '<span
                                         class="badge badge-danger">No</span>' !!}</td>
                                 <td>{{ $token->rate_limit }}/h</td>
                                 <td>{{ $token->created_at->format('Y-m-d H:i') }}</td>
+                                <td>
+                                    @if($token->last_used_at)
+                                    {{ $token->last_used_at->format('Y-m-d H:i') }}
+                                    @else
+                                    <span class="text-muted">Nunca</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($token->expires_at)
                                     {{ $token->expires_at->format('Y-m-d') }}
@@ -97,15 +116,16 @@
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
                     @else
                     <div class="alert alert-info">
                         No se encontraron tokens de API. Cree uno nuevo usando el botón de arriba.
                     </div>
                     @endif
                 </div>
-                <!-- /.card-body -->
+                <!-- /.panel-body -->
             </div>
-            <!-- /.card -->
+            <!-- /.panel -->
         </div>
         <!-- /.col -->
     </div>

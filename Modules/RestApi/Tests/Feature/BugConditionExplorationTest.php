@@ -171,4 +171,22 @@ class BugConditionExplorationTest extends TestCase
 
         $this->assertGreaterThan(0, $found, 'No restapi/tokens routes are registered.');
     }
+
+    public function test_token_management_view_renders_supported_csrf_fields_and_full_width_panel()
+    {
+        $this->user->role = User::ROLE_ADMIN;
+        $this->user->save();
+        config(['app.allowed_user_agents' => '']);
+
+        $response = $this->actingAs($this->user)->get('/restapi/tokens');
+        $response->assertStatus(200);
+        $html = $response->getContent();
+
+        $this->assertGreaterThanOrEqual(3, substr_count($html, 'name="_token"'));
+        $this->assertGreaterThanOrEqual(1, substr_count($html, 'name="_method" value="DELETE"'));
+        $this->assertStringNotContainsString('@csrf', $html);
+        $this->assertStringNotContainsString("@method('DELETE')", $html);
+        $this->assertStringContainsString('class="panel panel-default"', $html);
+        $this->assertStringNotContainsString('<div class="card">', $html);
+    }
 }

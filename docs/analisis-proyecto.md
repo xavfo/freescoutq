@@ -130,7 +130,8 @@ Tablero drag&drop de conversaciones abiertas (`/kanban`), con etapas
   - `003`: fix urgente de minificación CSS / Whoops roto.
   - `004`/`005`: iconos de módulos RestApi/Kanban + enlaces `public/modules/*`.
   - `006`: RestApi 1.6.0 (`thread_type`, `kanban_stage`, `assigned_to=null`).
-- `restapi-1.6.0.zip` y `docs/openapi.yaml` (OpenAPI 3.0) como artefactos.
+- [Paquete RestApi 1.6.0](../artifacts/deployments/restapi-1.6.0.zip) y
+  [especificación OpenAPI](openapi.yaml) como artefactos.
 - **Pendiente de seguridad**: un token de FreeScout usado en pruebas quedó
   expuesto en un chat → **rotarlo** (`restapi:revoke-token` /
   `restapi:create-token`).

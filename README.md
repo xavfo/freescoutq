@@ -13,6 +13,8 @@
 
 If you want to support the project feel free to **star this repository**. It helps to increase the visibility of the project and let people know that it is valuable. Thanks for your support!
 
+Project-specific guides and API references are collected in the [documentation index](docs/index.md).
+
 ![FreeScout](https://freescout-helpdesk.github.io/img/screenshots/screenshot.png)
 
 ## Table of Contents
